@@ -1,17 +1,22 @@
 package chord;
 
 import java.net.InetAddress;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import utils.Logger;
 
-class Chord {
+public class Chord {
     private final InetAddress peerAddress;
+    private final byte[] id;
 
     /**
-     * Instantiates the chord algorithm for this peer and 
+     * Instantiates the chord algorithm for this peer, making him join the P2P network
      * @param peerAddress the address of the peer that this class is in respect to.
      * @param otherPeerAddress the address of a peer that already belongs to the P2P network.
+     * @throws NoSuchAlgorithmException
      */
-    public Chord(InetAddress peerAddress, int port, InetAddress otherPeerAddress) {
+    public Chord(InetAddress peerAddress, int port, InetAddress otherPeerAddress) throws NoSuchAlgorithmException {
         // to initiate chord it is needed to have another peer's address (ip:port) 
         // then initiate a connection and send a join request
         this.peerAddress = peerAddress;
@@ -20,9 +25,9 @@ class Chord {
 
         // look more into consistent hashing
         MessageDigest digest = MessageDigest.getInstance("SHA-1");
-        byte[] peerId = digest.digest(original.getBytes());
+        this.id = digest.digest(original.getBytes());
 
-        Logger.log("Got the hash with length " + peerId.length + ": " + peerId);
+        Logger.log("Got the hash with length " + id.length + "B (" + id.length*8 + "b): " + id);
     }
 
     /**

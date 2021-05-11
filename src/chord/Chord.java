@@ -10,7 +10,6 @@ import utils.Logger;
 public class Chord {
     private final InetAddress peerAddress;
     private final BigInteger id;
-    private final FingerTable fingerTable = new FingerTable();
 
     /**
      * Instantiates the chord algorithm for this peer, making him join the P2P network
@@ -29,7 +28,7 @@ public class Chord {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         this.id = new BigInteger(digest.digest(original.getBytes()));
 
-        Logger.log("Got the hash with length " + id.length + "B (" + id.length*8 + "b): " + id);
+        Logger.log("Got the hash: " + id);
     }
 
     /**

@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.net.InetAddress;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -12,10 +13,19 @@ import configuration.ProtocolVersion;
 import exceptions.ArgsException;
 import exceptions.ArgsException.Type;
 import utils.Logger;
+import chord.Chord;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+        // before joining chord need to set up tcp server (with argument 0 so it gets a random free port) and use the address and port of it here
+        Chord chord = new Chord(InetAddress.getLocalHost(), 8515, InetAddress.getByName("google.com"));
+
+        System.exit(1);
+
         PeerConfiguration configuration = parseArgs(args);
+
+
+
         Peer peer = new Peer(configuration);
 
         Registry registry = LocateRegistry.getRegistry();
@@ -59,7 +69,7 @@ public class Main {
             MulticastChannel mc = new MulticastChannel(ChannelType.CONTROL, args[3], Integer.parseInt(args[4])); // Multicast control
             MulticastChannel mdb = new MulticastChannel(ChannelType.BACKUP, args[5], Integer.parseInt(args[6])); // Multicast data backup
             MulticastChannel mdr = new MulticastChannel(ChannelType.RESTORE, args[7], Integer.parseInt(args[8])); // Multicast data restore
-    
+
             PeerConfiguration configuration = new PeerConfiguration(protocolVersion, peerId, serviceAccessPoint, mc, mdb, mdr);
     
             return configuration;

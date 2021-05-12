@@ -1,5 +1,4 @@
-import argparse, os, signal, subprocess, psutil, sys, time
-from colorama import Fore, Back, Style
+import argparse, os, signal, subprocess, sys, time
 from threading import Thread, Lock
 from subprocess import PIPE
 
@@ -51,7 +50,7 @@ def compile_peers():
         print(out.stderr.decode("UTF-8"))
     return out.returncode == 0
 
-peersColors = [ Fore.RED, Fore.BLUE, Fore.CYAN, Fore.GREEN, Fore.MAGENTA, Fore.YELLOW, Fore.WHITE ]
+peersColors = [ '\033[31m', '\033[34m', '\033[36m', '\033[32m', '\033[35m', '\033[33m', '\033[37m' ]
 
 class PrintPeerStdout(Thread):
     def __init__(self, proc, lock):
@@ -72,18 +71,18 @@ class PrintPeerStdout(Thread):
 
                 print(color, end="")
                 print(name + ": ", end="")
-                print(Fore.RESET, end="")
+                print('\033[39m', end="")
 
                 lines = text.split("\n")
                 print(lines[0])
 
                 spacer = "-"
-                for n in name: spacer += "-"
+                for _n in name: spacer += "-"
                 spacer += " "
 
                 for line in lines[1:]:
                     if line == "": continue
-                    print(color + spacer + Fore.RESET, end="")
+                    print(color + spacer + '\033[39m', end="")
                     print(line)
                 
                 print()
@@ -128,9 +127,9 @@ def start_peers():
 
 def close_processes(processes):
     for proc in processes:
-        if not psutil.pid_exists(proc["pid"]):
-            print("PID " + str(proc["pid"]) + " not found.")
-            continue
+        # if not psutil.pid_exists(proc["pid"]):
+        #     print("PID " + str(proc["pid"]) + " not found.")
+        #     continue
         proc["thread"].stop()
         os.close(proc["pipeRFD"])
         os.kill(proc["pid"], signal.SIGTERM)
@@ -142,18 +141,17 @@ def printTips():
     print("Insert 'exit' to close the service. Press ENTER to check for changes and recompile.\n")
 
 
+pollForChanges()
+if not compile_peers(): exit()
+running = True
+
 rmipid = os.fork()
 if (rmipid == 0):
     os.chdir("src/build")  # needs to either have the classpath with the ClientInterface or be started in the same folder (starting in same folder)
     print("Starting RMI...")
     os.execvp("rmiregistry", ["rmiregistry"])
 
-
 time.sleep(1)
-
-pollForChanges()
-if not compile_peers(): exit()
-running = True
 
 printTips()
 

@@ -1,15 +1,18 @@
 package chord;
 
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.lang.Math;
 
 import utils.Logger;
 
 public class Chord {
     private final InetAddress peerAddress;
-    private final BigInteger id;
+    private final int id;
+    private List<ChordNode> fingerTable;
 
     /**
      * Instantiates the chord algorithm for this peer, making him join the P2P network
@@ -26,7 +29,9 @@ public class Chord {
 
         // look more into consistent hashing
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        this.id = new BigInteger(digest.digest(original.getBytes()));
+        this.id = digest.digest(original.getBytes());
+
+        this.fingerTable = new ArrayList<>();
 
         Logger.log("Got the hash: " + id);
     }
@@ -35,12 +40,18 @@ public class Chord {
      * Daniel
      */
     public void updateFingers() {
+        int finger = 0;
 
+        while (finger < 256) {
+            fingerTable[finger] = lookup(id + Math.pow(2, finger));
+
+            finger++;
+        }
     }
 
     /**
      * Daniel
-     * Verifies if the predecessor of the node's successer is still the node itself
+     * Verifies if the predecessor of the node's successor is still the node itself
      */
     public void stabilize() {
         
@@ -90,7 +101,7 @@ public class Chord {
      * Rafael
      * Finds who holds or will hold the value of a given key.
      */
-    public void lookup() {
+    public void lookup(int k) {
         // if this peer holds the value of the key, stop
         // else, forward the request to the closest predecessor of the key that we know of (if none, forward to our successor)
         // if no node has an id equal to the key, the key's value is stored in the node with the next highest id

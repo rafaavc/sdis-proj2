@@ -129,6 +129,11 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
         return null;
     }
 
+    @Override
+    public void ssl() throws RemoteException, IOException {
+
+    }
+
     public PeerState getPeerState() {
         return this.configuration.getPeerState();
     }

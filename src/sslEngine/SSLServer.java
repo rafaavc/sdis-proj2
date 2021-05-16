@@ -11,7 +11,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Iterator;
 
@@ -27,7 +27,7 @@ public class SSLServer extends SSLPeer{
     public SSLServer(String protocol, String address, int port) throws Exception {
         this.context = SSLContext.getInstance(protocol);
         //define path to store the key managers and trust managers
-        this.context.init(createKeyManagers("./src/sslEngine/keys/server.keys","storepass", "keypass"), createTrustManagers("./src/sslEngine/keys/truststore","storepass"), new SecureRandom());
+        this.context.init(createKeyManagers("../sslEngine/keys/server.jks","123456", "123456"), createTrustManagers("../sslEngine/keys/truststore.jks","123456"), new SecureRandom());
 
         SSLSession session = context.createSSLEngine().getSession();
         this.appData = ByteBuffer.allocate(session.getApplicationBufferSize());
@@ -51,7 +51,7 @@ public class SSLServer extends SSLPeer{
         Logger.log("Going to read from the client...");
 
         this.peerNetData.clear();
-        int bytesRead = socket.read(this.peerAppData);
+        int bytesRead = socket.read(this.peerNetData);
         if(bytesRead > 0){
             this.peerNetData.flip();
             while(this.peerNetData.hasRemaining()){
@@ -66,21 +66,24 @@ public class SSLServer extends SSLPeer{
                         this.closeConnection(socket, engine);
                         return;
                     case BUFFER_UNDERFLOW:
-                        this.peerNetData = this.handleBufferUnderflow(engine,this.peerNetData);
+                        this.peerNetData = this.processBufferUnderflow(engine,this.peerNetData);
                         break;
                     case BUFFER_OVERFLOW:
-                        this.peerAppData = this.enlargeApplicationBuffer(engine, this.peerAppData);
+                        this.peerAppData = this.increaseBufferSize(this.peerAppData, engine.getSession().getApplicationBufferSize());
                         break;
                     default:
                         throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
                 }
             }
+            byte[] bytes = new byte[this.peerAppData.remaining()];
+            this.peerAppData.get(bytes);
+            System.out.println("Received from client: " + new String(bytes));
 
             this.write(socket, engine, "I am your server");
         }
         else if(bytesRead < 0){
             Logger.log("End of stream, going to close connection with client");
-            this.handleEndOfStream(socket, engine);
+            this.processEndOfStream(socket, engine);
         }
     }
 
@@ -106,9 +109,9 @@ public class SSLServer extends SSLPeer{
                     this.closeConnection(socket, engine);
                     return;
                 case BUFFER_UNDERFLOW:
-                    throw new SSLException("Buffer underflow occured after a wrap.");
+                    throw new SSLException("Buffer underflow occurred after a wrap.");
                 case BUFFER_OVERFLOW:
-                    this.netData = this.enlargePacketBuffer(engine, this.netData);
+                    this.netData = this.increaseBufferSize(this.netData, engine.getSession().getPacketBufferSize());
                     break;
                 default:
                     throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
@@ -163,3 +166,4 @@ public class SSLServer extends SSLPeer{
 
     }
 }
+

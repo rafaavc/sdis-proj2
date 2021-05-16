@@ -59,10 +59,16 @@ public abstract class SSLPeer {
                         break;
                     }
                     this.peerNetData.flip();
-
-                    result = engine.unwrap(this.peerNetData, peerAppData);
-                    this.peerNetData.compact();
-                    status = result.getHandshakeStatus();
+                    try{
+                        result = engine.unwrap(this.peerNetData, peerAppData);
+                        this.peerNetData.compact();
+                        status = result.getHandshakeStatus();
+                    }
+                    catch (SSLException exception){
+                        engine.closeOutbound();
+                        status = engine.getHandshakeStatus();
+                        break;
+                    }
                     switch (result.getStatus()){
                         case OK:
                             break;
@@ -75,10 +81,10 @@ public abstract class SSLPeer {
                                 break;
                             }
                         case BUFFER_OVERFLOW:
-                            peerAppData = enlargeApplicationBuffer(engine, peerAppData);
+                            peerAppData = this.increaseBufferSize(peerAppData, engine.getSession().getApplicationBufferSize());
                             break;
                         case BUFFER_UNDERFLOW:
-                            this.peerNetData = handleBufferUnderflow(engine, this.peerNetData);
+                            this.peerNetData = this.processBufferUnderflow(engine, this.peerNetData);
                             break;
                         default:
                             throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
@@ -86,8 +92,15 @@ public abstract class SSLPeer {
                     break;
                 case NEED_WRAP:
                     this.netData.clear();
-                    result = engine.wrap(appData, this.netData);
-                    status = result.getHandshakeStatus();
+                    try{
+                        result = engine.wrap(appData, this.netData);
+                        status = result.getHandshakeStatus();
+                    }
+                    catch (SSLException exception){
+                        engine.closeOutbound();
+                        status = engine.getHandshakeStatus();
+                        break;
+                    }
                     switch (result.getStatus()){
                         case OK:
                             this.netData.flip();
@@ -96,16 +109,21 @@ public abstract class SSLPeer {
                             }
                             break;
                         case CLOSED:
-                            this.netData.flip();
-                            while(this.netData.hasRemaining()){
-                                socketChannel.write(this.netData);
+                            try{
+                                this.netData.flip();
+                                while(this.netData.hasRemaining()){
+                                    socketChannel.write(this.netData);
+                                }
+                                this.peerNetData.clear();
                             }
-                            this.peerNetData.clear();
+                            catch (Exception exception){
+                                status = engine.getHandshakeStatus();
+                            }
                             break;
                         case BUFFER_UNDERFLOW:
-                            throw new SSLException("Buffer underflow occured after a wrap.");
+                            throw new SSLException("Buffer underflow occurred after a wrap.");
                         case BUFFER_OVERFLOW:
-                            this.netData = enlargePacketBuffer(engine, this.netData);
+                            this.netData = this.increaseBufferSize(this.netData, engine.getSession().getPacketBufferSize());
                             break;
                         default:
                             throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
@@ -119,7 +137,6 @@ public abstract class SSLPeer {
                     status = engine.getHandshakeStatus();
                     break;
                 case FINISHED:
-                    break;
                 case NOT_HANDSHAKING:
                     break;
                 default:
@@ -127,19 +144,13 @@ public abstract class SSLPeer {
             }
         }
 
+        Logger.log("Finalized handshake");
+
         return true;
     }
 
 
-    protected ByteBuffer enlargeApplicationBuffer(SSLEngine engine, ByteBuffer buffer){
-        return enlargeBuffer(buffer, engine.getSession().getPacketBufferSize());
-    }
-
-    protected ByteBuffer enlargePacketBuffer(SSLEngine engine, ByteBuffer buffer) {
-        return enlargeBuffer(buffer, engine.getSession().getPacketBufferSize());
-    }
-
-    protected ByteBuffer enlargeBuffer(ByteBuffer buffer, int capacity) {
+    protected ByteBuffer increaseBufferSize(ByteBuffer buffer, int capacity) {
         if (capacity > buffer.capacity()) {
             buffer = ByteBuffer.allocate(capacity);
         } else {
@@ -148,11 +159,11 @@ public abstract class SSLPeer {
         return buffer;
     }
 
-    protected ByteBuffer handleBufferUnderflow(SSLEngine engine, ByteBuffer buffer) {
+    protected ByteBuffer processBufferUnderflow(SSLEngine engine, ByteBuffer buffer) {
         if (engine.getSession().getPacketBufferSize() < buffer.limit()) {
             return buffer;
         } else {
-            ByteBuffer replaceBuffer = enlargePacketBuffer(engine, buffer);
+            ByteBuffer replaceBuffer = this.increaseBufferSize(buffer, engine.getSession().getPacketBufferSize());
             buffer.flip();
             replaceBuffer.put(buffer);
             return replaceBuffer;
@@ -165,8 +176,13 @@ public abstract class SSLPeer {
         socketChannel.close();
     }
 
-    protected void handleEndOfStream(SocketChannel socketChannel, SSLEngine engine) throws IOException  {
-        engine.closeInbound();
+    protected void processEndOfStream(SocketChannel socketChannel, SSLEngine engine) throws IOException  {
+        try{
+            engine.closeInbound();
+        }
+        catch (Exception e){
+            Logger.error("This engine was forced to close inbound, without having received the proper SSL/TLS close notification message from the peer, due to end of stream.");
+        }
         closeConnection(socketChannel, engine);
     }
 
@@ -190,7 +206,7 @@ public abstract class SSLPeer {
         try {
             trustStore.load(trustStoreIS, keystorePassword.toCharArray());
         } finally {
-                trustStoreIS.close();
+            trustStoreIS.close();
         }
         TrustManagerFactory trustFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustFactory.init(trustStore);

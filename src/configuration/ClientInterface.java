@@ -1,5 +1,6 @@
 package configuration;
 
+import java.io.IOException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -13,4 +14,5 @@ public interface ClientInterface extends Remote {
     public Result restore(String fileName) throws RemoteException;
     public Result delete(String fileName) throws RemoteException;
     public Result reclaim(int kb) throws RemoteException;
+    public void ssl() throws Exception;
 }

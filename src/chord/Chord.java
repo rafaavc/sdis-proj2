@@ -1,6 +1,7 @@
 package chord;
 
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public class Chord {
 
         // look more into consistent hashing
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        this.id = digest.digest(original.getBytes());
+        this.id = ByteBuffer.wrap(digest.digest(original.getBytes())).getInt();
 
         this.fingerTable = new ArrayList<>();
 
@@ -40,13 +41,8 @@ public class Chord {
      * Daniel
      */
     public void updateFingers() {
-        int finger = 0;
-
-        while (finger < 256) {
-            fingerTable[finger] = lookup(id + Math.pow(2, finger));
-
-            finger++;
-        }
+        for (int finger = 0; finger < 256; finger++)
+            fingerTable.set(finger, lookup(id + (int) Math.pow(2, finger)));
     }
 
     /**
@@ -101,10 +97,11 @@ public class Chord {
      * Rafael
      * Finds who holds or will hold the value of a given key.
      */
-    public void lookup(int k) {
+    public ChordNode lookup(int k) {
         // if this peer holds the value of the key, stop
         // else, forward the request to the closest predecessor of the key that we know of (if none, forward to our successor)
         // if no node has an id equal to the key, the key's value is stored in the node with the next highest id
+        return null;
     }
 }
 

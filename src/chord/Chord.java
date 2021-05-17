@@ -19,14 +19,15 @@ public class Chord {
     /**
      * Instantiates the chord algorithm for this peer, making him join the P2P network
      * @param peerAddress the address of the peer that this class is in respect to.
-     * @param otherPeerAddress the address of a peer that already belongs to the P2P network.
+     * @param port the port of the peer that this class is in respect to to.
+     * @param preexistingNode the address of a peer that already belongs to the P2P network.
      * @throws NoSuchAlgorithmException
      */
-    public Chord(InetAddress peerAddress, int port, InetAddress preexistingNode) throws NoSuchAlgorithmException {    
+    public Chord(InetAddress peerAddress, int port, InetAddress preexistingNode, int preexistingNodePort) throws NoSuchAlgorithmException {    
         this(peerAddress, port);
 
         // Joining a preexisting chord ring
-        this.join(preexistingNode);
+        this.join(preexistingNode, preexistingNodePort);
     }
 
     public Chord(InetAddress peerAddress, int port) throws NoSuchAlgorithmException {
@@ -36,7 +37,7 @@ public class Chord {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         int id = ByteBuffer.wrap(digest.digest(original.getBytes())).getInt();
 
-        this.self = new ChordNode(peerAddress, id);
+        this.self = new ChordNode(peerAddress, port, id);
         this.m = 32; // an integer has 32 bits
 
         Logger.log("Got the peer id: " + id);
@@ -45,16 +46,12 @@ public class Chord {
         this.create();
     }
 
-    public void initialize(InetAddress peerAddress, int port) throws NoSuchAlgorithmException {
-        
-    }
-
     private void create() {
         this.predecessor = null;
         this.fingerTable.set(0, self);
     }
 
-    private void join(InetAddress preexistingNode) {
+    private void join(InetAddress preexistingNode, int preexistingNodePort) {
         this.predecessor = null;
 
         // send LOOKUP message to the preexisting node
@@ -123,6 +120,8 @@ public class Chord {
         if (k > self.getId() && k <= fingerTable.get(0).getId()) return fingerTable.get(0);
         
         ChordNode closestPreceding = this.closestPrecedingNode(k);
+
+        // need to check if the closest preceding is this node?
         
         // TODO send LOOKUP message to the closes preceding node
         return closestPreceding; // change to the response of the LOOKUP message

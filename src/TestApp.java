@@ -69,6 +69,9 @@ public class TestApp {
                 case "STATE": 
                     Logger.log(stub.getPeerState().toString());
                     break;
+                case "SSL":
+                    stub.ssl();
+                    break;
                 default:
                     Logger.error("The operation '" + args[1] + "' doesn't exist.");
                     break;

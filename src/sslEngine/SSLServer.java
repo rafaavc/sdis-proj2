@@ -11,11 +11,10 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Iterator;
 
-public class SSLServer extends SSLPeer{
+public class SSLServer extends SSLPeer {
 
     private boolean available;
 

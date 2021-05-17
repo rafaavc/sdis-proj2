@@ -4,7 +4,6 @@ import configuration.ClientInterface;
 import state.PeerState;
 import utils.Result;
 
-import java.io.IOException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;

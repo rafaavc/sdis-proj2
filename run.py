@@ -1,4 +1,4 @@
-import argparse, os, signal, subprocess, sys, time
+import argparse, os, signal, subprocess, sys, time, re
 from threading import Thread, Lock
 from subprocess import PIPE
 
@@ -98,43 +98,63 @@ class PrintPeerStdout(Thread):
 def run_peer(peerId):
     os.execvp("java", ["java", "Main", args.v, str(peerId), "peer"+str(peerId), "224.0.0.1", "7099", "224.0.0.2", "7099", "224.0.0.3", "7099"])
 
-def start_peers():
-    os.chdir("src/build")
-    processes = []
-    for i in range(args.n):
-        r, w = os.pipe()
-        newpid = os.fork()
-        if newpid == 0:  # peer
-            os.close(r)
-            os.dup2(w, sys.stdout.fileno())  # stdout will be the pipe
-            run_peer(i)
-        else:  # parent
-            os.close(w)
-            processes.append({
-                "peerId": i,
-                "pid": newpid,
-                "pipeRFD": r
-            })
-    # print("\nCreated processes: \n" + str(processes), end="\n\n")
-    os.chdir("../..")
-    lock = Lock()
-    for proc in processes:
-        thread = PrintPeerStdout(proc, lock)
-        thread.setDaemon(True)
-        proc["thread"] = thread
-        thread.start()
-    return processes
 
-def close_processes(processes):
-    for proc in processes:
+processes = {}
+lock = Lock()
+
+def start_peer(peerId):
+    os.chdir("src/build")
+    r, w = os.pipe()
+    newpid = os.fork()
+    if newpid == 0:  # peer
+        os.close(r)
+        os.dup2(w, sys.stdout.fileno())  # stdout will be the pipe
+        run_peer(peerId)
+    else:  # parent
+        os.close(w)
+        processes[peerId] = {
+            "peerId": peerId,
+            "pid": newpid,
+            "pipeRFD": r
+        }
+    
+    thread = PrintPeerStdout(processes[peerId], lock)
+    thread.setDaemon(True)
+    processes[peerId]["thread"] = thread
+    thread.start()
+
+    os.chdir("../..")
+
+
+def stop_peer(peerId, deleteFromProcesses=False):
+    stop_peer_process(processes[peerId], True)
+    if (deleteFromProcesses):
+        del processes[peerId]
+
+def stop_peer_process(proc, wait=False):
+    proc["thread"].stop()
+    os.close(proc["pipeRFD"])
+    os.kill(proc["pid"], signal.SIGTERM)
+    if wait: os.wait()
+
+
+
+def start_peers():
+    for i in range(args.n):
+        start_peer(i)
+    print("\nCreated processes: \n" + str(processes), end="\n\n")
+
+
+def close_processes():
+    for proc in processes.values():
         # if not psutil.pid_exists(proc["pid"]):
         #     print("PID " + str(proc["pid"]) + " not found.")
         #     continue
-        proc["thread"].stop()
-        os.close(proc["pipeRFD"])
-        os.kill(proc["pid"], signal.SIGTERM)
-    for _i in processes:
+        stop_peer_process(proc)
+
+    for proc in processes.values():
         os.wait()
+    
 
 
 def printTips():
@@ -156,7 +176,7 @@ time.sleep(1)
 printTips()
 
 while running:
-    processes = start_peers()
+    start_peers()
 
     while True:
         text = input().strip()
@@ -166,7 +186,35 @@ while running:
             break
         elif text == "restart":
             break
+        elif text == "state":
+            print("Peers active: ")
+            for proc in processes.values():
+                print("\t" + str(proc['peerId']) + " (PID=" + str(proc['pid']) + ")")
+            print()
+            continue
         elif text != "":
+            startMatch = re.search("^start ([0-9]+)$", text)
+            if (startMatch != None):
+                n = int(startMatch.group(1))
+                if (n in processes):
+                    print("That id is already in use!")
+                    continue
+                print("Starting peer with id " + str(n))
+                start_peer(n)
+                continue
+
+
+            stopMatch = re.search("^stop ([0-9]+)$", text)
+            if (stopMatch != None):
+                n = int(stopMatch.group(1))
+                if (not (n in processes)):
+                    print("No peer uses that id!")
+                    continue
+                print("Stopping peer with id " + str(n))
+                stop_peer(n, True)
+                continue
+
+
             print()
             subprocess.run([ "./interface.sh", *text.split(" ")])
             continue
@@ -177,5 +225,5 @@ while running:
             if (compile_peers()): # improvement: only compile the files that were changed
                 break
     
-    close_processes(processes)
+    close_processes()
     if not running: os.kill(rmipid, signal.SIGTERM)

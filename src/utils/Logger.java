@@ -18,7 +18,6 @@ public class Logger {
         System.err.println("WAS THROWN: " + thrown.getMessage());
         thrown.printStackTrace();
         future.complete(new Result(false, thrown.getMessage()));
-        
     }
 
     public static void error(String msg) {

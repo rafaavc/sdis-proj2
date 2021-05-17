@@ -1,6 +1,6 @@
 package sslEngine;
 
-public class ServerThread implements Runnable{
+public class ServerThread implements Runnable {
 
     private SSLServer server;
 

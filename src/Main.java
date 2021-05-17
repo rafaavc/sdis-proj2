@@ -18,9 +18,9 @@ import chord.Chord;
 public class Main {
     public static void main(String[] args) throws Exception {
         // before joining chord need to set up tcp server (with argument 0 so it gets a random free port) and use the address and port of it here
-        Chord chord = new Chord(InetAddress.getLocalHost(), 8515, InetAddress.getByName("google.com"));
+        Chord chord = new Chord(InetAddress.getLocalHost(), 8515, InetAddress.getByName("google.com"), 80);
 
-        System.exit(1);
+        //System.exit(1);
 
         PeerConfiguration configuration = parseArgs(args);
 

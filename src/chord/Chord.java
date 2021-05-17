@@ -48,7 +48,7 @@ public class Chord {
 
     private void create() {
         this.predecessor = null;
-        this.fingerTable.set(0, self);
+        this.fingerTable.add(self);
     }
 
     private void join(InetAddress preexistingNode, int preexistingNodePort) {
@@ -57,15 +57,23 @@ public class Chord {
         // send LOOKUP message to the preexisting node
         // and set the successor to the value of the return
         ChordNode successor = this.lookup(self.getId());  // TODO change to the value returned by the LOOKUP message
-        this.fingerTable.set(0, successor);
+        this.fingerTable.add(successor);
     }
 
     /**
      * Daniel
      */
     public void updateFingers() {
-        for (int finger = 0; finger < this.m - 1; finger++)
-            fingerTable.set(finger, lookup(self.getId() + (int) Math.pow(2, finger)));
+        for (int finger = 0; finger < this.m - 1; finger++) {
+            ChordNode fingerValue = lookup(self.getId() + (int) Math.pow(2, finger));
+            if (fingerTable.get(finger) != null) {
+                fingerTable.set(finger, fingerValue);
+            } else if (fingerTable.get(finger - 1) != null) { // if it's filled up to this point
+                fingerTable.add(fingerValue);
+            } else {
+                Logger.error("updateFingers: finger table was not valid.");
+            }
+        }
     }
 
     /**

@@ -11,9 +11,10 @@ import java.lang.Math;
 import utils.Logger;
 
 public class Chord {
-    private final InetAddress peerAddress;
-    private final int id;
-    private List<ChordNode> fingerTable;
+    private List<ChordNode> fingerTable = new ArrayList<>();
+    private final ChordNode self;
+    private ChordNode predecessor;
+    private final int m;
 
     /**
      * Instantiates the chord algorithm for this peer, making him join the P2P network
@@ -21,28 +22,53 @@ public class Chord {
      * @param otherPeerAddress the address of a peer that already belongs to the P2P network.
      * @throws NoSuchAlgorithmException
      */
-    public Chord(InetAddress peerAddress, int port, InetAddress otherPeerAddress) throws NoSuchAlgorithmException {
-        // to initiate chord it is needed to have another peer's address (ip:port) 
-        // then initiate a connection and send a join request
-        this.peerAddress = peerAddress;
+    public Chord(InetAddress peerAddress, int port, InetAddress preexistingNode) throws NoSuchAlgorithmException {    
+        this(peerAddress, port);
 
+        // Joining a preexisting chord ring
+        this.join(preexistingNode);
+    }
+
+    public Chord(InetAddress peerAddress, int port) throws NoSuchAlgorithmException {
         String original = peerAddress.getHostAddress() + port;
 
         // look more into consistent hashing
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        this.id = ByteBuffer.wrap(digest.digest(original.getBytes())).getInt();
+        int id = ByteBuffer.wrap(digest.digest(original.getBytes())).getInt();
 
-        this.fingerTable = new ArrayList<>();
+        this.self = new ChordNode(peerAddress, id);
+        this.m = 32; // an integer has 32 bits
 
-        Logger.log("Got the hash: " + id);
+        Logger.log("Got the peer id: " + id);
+
+        // Creating a new chord ring
+        this.create();
+    }
+
+    public void initialize(InetAddress peerAddress, int port) throws NoSuchAlgorithmException {
+        
+    }
+
+    private void create() {
+        this.predecessor = null;
+        this.fingerTable.set(0, self);
+    }
+
+    private void join(InetAddress preexistingNode) {
+        this.predecessor = null;
+
+        // send LOOKUP message to the preexisting node
+        // and set the successor to the value of the return
+        ChordNode successor = this.lookup(self.getId());  // TODO change to the value returned by the LOOKUP message
+        this.fingerTable.set(0, successor);
     }
 
     /**
      * Daniel
      */
     public void updateFingers() {
-        for (int finger = 0; finger < 256; finger++)
-            fingerTable.set(finger, lookup(id + (int) Math.pow(2, finger)));
+        for (int finger = 0; finger < this.m - 1; finger++)
+            fingerTable.set(finger, lookup(self.getId() + (int) Math.pow(2, finger)));
     }
 
     /**
@@ -69,17 +95,6 @@ public class Chord {
     }
 
     /**
-     * Rafael
-     * Integrates a new peer into the P2P network.
-     */
-    public void integrateNewPeer(String peerId, InetAddress peerAddress, int port) {
-        // needs the peer's id (hash) and insert it in between two other peers (its predecessor and successor)
-        // also needs to change those two peers' finger tables (they will handle that)
-        // this request should be forwarded to the peer with highest id
-        
-    }
-
-    /**
      * Removes the peer from the P2P network.
      */
     public void leave() {
@@ -87,21 +102,30 @@ public class Chord {
     }
 
     /**
-     * Rafael
+     * Gets the closest preceding node to the key k that this node knows of
      */
-    public void closestPrecedingNode() {
-
+    public ChordNode closestPrecedingNode(int k) {
+        for (int i = this.m - 1; i >= 0; i--) {
+            ChordNode finger = fingerTable.get(i);
+            int fingerId = finger.getId();
+            if (fingerId > self.getId()  && fingerId <= k) return finger;
+        }
+        return self;
     }
 
     /**
-     * Rafael
      * Finds who holds or will hold the value of a given key.
      */
     public ChordNode lookup(int k) {
-        // if this peer holds the value of the key, stop
-        // else, forward the request to the closest predecessor of the key that we know of (if none, forward to our successor)
-        // if no node has an id equal to the key, the key's value is stored in the node with the next highest id
-        return null;
+        if (k == self.getId()) return self;
+
+        // this is important because the successor is the only node whose position the current node knows with certainty
+        if (k > self.getId() && k <= fingerTable.get(0).getId()) return fingerTable.get(0);
+        
+        ChordNode closestPreceding = this.closestPrecedingNode(k);
+        
+        // TODO send LOOKUP message to the closes preceding node
+        return closestPreceding; // change to the response of the LOOKUP message
     }
 }
 

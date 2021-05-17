@@ -79,7 +79,10 @@ public class MessageParser {
             case FILECHECK:
                 message.setMessageType(MessageType.FILECHECK);
                 break;
-
+            
+            case LOOKUP:
+                message.setMessageType(MessageType.LOOKUP);
+                break;
             default:
                 break;
         }

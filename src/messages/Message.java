@@ -23,7 +23,8 @@ public class Message {
         CHUNK,
         DELETE,
         REMOVED,
-        FILECHECK
+        FILECHECK,
+        LOOKUP
     }
 
     private static final String CRLF = new String(new byte[] { 0xD, 0xA });
@@ -37,10 +38,11 @@ public class Message {
         messageTypeStrings.put(MessageType.DELETE, "DELETE");
         messageTypeStrings.put(MessageType.REMOVED, "REMOVED");
         messageTypeStrings.put(MessageType.FILECHECK, "FILECHECK");
+        messageTypeStrings.put(MessageType.LOOKUP, "LOOKUP");
     }
 
     public Message(ProtocolVersion version, int senderId, String fileId) {
-        this.version = version;  // TODO verify version
+        this.version = version;
         this.senderId = senderId;
         this.fileId = fileId;
     }
@@ -145,7 +147,7 @@ public class Message {
         components.add(version.toString());
         components.add(messageTypeStrings.get(messageType));
         components.add(String.valueOf(senderId));
-        components.add(fileId);
+        if (fileId != null) components.add(fileId);
         if (chunkNo != -1) components.add(String.valueOf(chunkNo));
         if (replicationDeg != -1) components.add(String.valueOf(replicationDeg));
         return components;

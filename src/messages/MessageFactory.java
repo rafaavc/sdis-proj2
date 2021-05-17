@@ -11,6 +11,14 @@ public class MessageFactory {
         this.version = version;
     }
 
+    public byte[] getLookupMessage(int senderId, int key) {
+        Message msg = new Message(version,
+                                    MessageType.LOOKUP,
+                                    senderId,
+                                    String.valueOf(key));
+        return msg.getBytes();
+    }
+
     public byte[] getPutchunkMessage(int senderId, String fileId, int replicationDeg, int chunkNo, byte[] body) throws ArgsException {
         Message msg = new Message(version, 
                                     MessageType.PUTCHUNK,

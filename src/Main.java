@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -71,10 +72,22 @@ public class Main {
 
         String serviceAccessPoint = args[2];
 
-        // TODO check if a preexisting peer's address is present
+        if (args.length > 4) {
+            InetAddress preexistingPeerAddress = InetAddress.getByName(args[4]);
 
-        PeerConfiguration configuration = new PeerConfiguration(protocolVersion, peerId, serviceAccessPoint, serverPort);
+            try 
+            {
+                int preexistingPeerPort = Integer.parseInt(args[5]);
+                if (serverPort <= 0) throw new Exception();
 
-        return configuration;
+                return new PeerConfiguration(protocolVersion, peerId, serviceAccessPoint, serverPort, new InetSocketAddress(preexistingPeerAddress, preexistingPeerPort));
+            } 
+            catch(Exception e) 
+            {
+                throw new ArgsException(Type.PREEXISTING_PEER_PORT, args[3]);
+            }
+        }
+        
+        return new PeerConfiguration(protocolVersion, peerId, serviceAccessPoint, serverPort);
     } 
 }

@@ -15,7 +15,8 @@ public class ArgsException extends Exception {
         MESSAGE_TYPE,
         UNKNOWN_VERSION_NO,
         PEER_ID,
-        SERVER_PORT
+        SERVER_PORT,
+        PREEXISTING_PEER_PORT
     }
 
     private static final ConcurrentMap<Type, String> messages = new ConcurrentHashMap<>();
@@ -30,6 +31,7 @@ public class ArgsException extends Exception {
         messages.put(Type.UNKNOWN_VERSION_NO, "Unknown version number. Only know 1.0 (vanilla) and 1.1 (with enhancements).");
         messages.put(Type.PEER_ID, "Invalid peer ID. Must be an integer.");
         messages.put(Type.SERVER_PORT, "Invalid server port. Must be a positive integer.");
+        messages.put(Type.PREEXISTING_PEER_PORT, "Invalid preexisting peer port. Must be a positive integer.");
     }
 
     public ArgsException(Type type) {

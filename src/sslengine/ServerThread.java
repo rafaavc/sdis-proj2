@@ -1,4 +1,4 @@
-package sslEngine;
+package sslengine;
 
 public class ServerThread implements Runnable {
 

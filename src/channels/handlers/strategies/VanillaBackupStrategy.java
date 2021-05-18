@@ -66,7 +66,8 @@ public class VanillaBackupStrategy extends BackupStrategy {
             public void run() {
                 try
                 {
-                    configuration.getMC().send(messageFactory.getStoredMessage(configuration.getPeerId(), msg.getFileId(), msg.getChunkNo()));
+                    //configuration.getMC().send(messageFactory.getStoredMessage(configuration.getPeerId(), msg.getFileId(), msg.getChunkNo()));
+                    Logger.todo(this);
                 } 
                 catch(Exception e) 
                 {

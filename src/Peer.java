@@ -5,9 +5,6 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.CompletableFuture;
 
-import channels.ChannelListener;
-import channels.MulticastChannel;
-import channels.handlers.Handler;
 import configuration.ClientInterface;
 import configuration.PeerConfiguration;
 import state.PeerState;
@@ -27,11 +24,6 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
         this.configuration = configuration;
 
         Logger.log(this.getPeerState());
-
-        for (MulticastChannel channel : this.configuration.getChannels())
-        {
-            new ChannelListener(channel, Handler.get(this.configuration, channel.getType()), configuration.getThreadScheduler()).start();
-        }
 
         Logger.log("Running on protocol version " + configuration.getProtocolVersion() + ". Ready!");
 
@@ -60,8 +52,9 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
         CompletableFuture<Result> f = new CompletableFuture<>();
 
-        new Backup(f, configuration, filePath, desiredReplicationDegree).execute();
-
+        //new Backup(f, configuration, filePath, desiredReplicationDegree).execute();
+        Logger.todo(this);
+        
         try
         {
             return f.get();

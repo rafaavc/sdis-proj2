@@ -1,23 +1,28 @@
 package chord;
 
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-import sslEngine.SSLClient;
+import configuration.PeerConfiguration;
+import exceptions.ArgsException;
+import messages.MessageFactory;
+import sslengine.SSLClient;
 
 import java.lang.Math;
 
 import utils.Logger;
 
 public class Chord {
-    private List<ChordNode> fingerTable = new ArrayList<>();
+    private final List<ChordNode> fingerTable = new ArrayList<>();
+    private final PeerConfiguration configuration;
     private final ChordNode self;
-    private ChordNode predecessor;
     private final int m;
+    private final MessageFactory messageFactory;
+    private ChordNode predecessor;
 
     /**
      * Instantiates the chord algorithm for this peer, making him join the P2P network
@@ -26,27 +31,31 @@ public class Chord {
      * @param preexistingNode the address of a peer that already belongs to the P2P network.
      * @throws Exception
      */
-    public Chord(InetAddress peerAddress, int port, InetAddress preexistingNode, int preexistingNodePort) throws Exception {    
-        this(peerAddress, port);
+    public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress, InetSocketAddress preexistingNode) throws Exception {    
+        this(configuration, peerAddress);
 
         // Joining a preexisting chord ring
-        this.join(preexistingNode, preexistingNodePort);
+        this.join(preexistingNode);
     }
 
-    public Chord(InetAddress peerAddress, int port) throws NoSuchAlgorithmException {
-        String original = peerAddress.getHostAddress() + port;
+    public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress) throws NoSuchAlgorithmException, ArgsException {
+        String original = peerAddress.getAddress().getHostAddress() + peerAddress.getPort();
 
         // look more into consistent hashing
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         int id = ByteBuffer.wrap(digest.digest(original.getBytes())).getInt();
 
-        this.self = new ChordNode(peerAddress, port, id);
+        this.self = new ChordNode(peerAddress, id);
         this.m = 32; // an integer has 32 bits
-
-        Logger.log("Got the peer id: " + id);
+        this.configuration = configuration;
+        this.messageFactory = new MessageFactory(configuration.getProtocolVersion());
 
         // Creating a new chord ring
         this.create();
+    }
+
+    public int getId() {
+        return self.getId();
     }
 
     private void create() {
@@ -54,7 +63,7 @@ public class Chord {
         this.fingerTable.add(self);
     }
 
-    private void join(InetAddress preexistingNode, int preexistingNodePort) throws Exception {
+    private void join(InetSocketAddress preexistingNode) throws Exception {
         this.predecessor = null;
 
         // send LOOKUP message to the preexisting node
@@ -127,10 +136,14 @@ public class Chord {
         
         ChordNode closestPreceding = this.closestPrecedingNode(k);
 
+        // TODO start LOOKUP action
+
         // need to check if the closest preceding is this node?
         SSLClient client = new SSLClient(closestPreceding.getInetAddress().toString(), closestPreceding.getPort());
-        //client.write(new Message);
-        // TODO send LOOKUP message to the closes preceding node
+        client.write(messageFactory.getLookupMessage(self.getId(), k));
+        
+        client.read();
+
         return closestPreceding; // change to the response of the LOOKUP message
     }
 }

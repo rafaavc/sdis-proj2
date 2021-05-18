@@ -1,4 +1,4 @@
-package sslEngine;
+package sslengine;
 
 import configuration.ClientInterface;
 import state.PeerState;
@@ -67,11 +67,11 @@ public class P implements ClientInterface {
     public void ssl() throws Exception {
         this.client = new SSLClient("TLS", "localhost", 8081);
         this.client.connect();
-        this.client.write("Hello");
+        //this.client.write("Hello");
         this.client.read();
-        this.client.write("asdasdadadads");
+        //this.client.write("asdasdadadads");
         this.client.read();
-        this.client.write("pppppp");
+        //this.client.write("pppppp");
         this.client.read();
         this.client.shutdown();
     }

@@ -5,6 +5,7 @@ import configuration.ProtocolVersion;
 import files.FileManager;
 import messages.Message;
 import messages.MessageFactory;
+import utils.Logger;
 
 public class VanillaRestoreStrategy extends RestoreStrategy {
     public VanillaRestoreStrategy(PeerConfiguration configuration) {
@@ -17,6 +18,7 @@ public class VanillaRestoreStrategy extends RestoreStrategy {
         byte[] chunkData = new FileManager(configuration.getRootDir()).readChunk(msg.getFileId(), msg.getChunkNo());
         byte[] chunkMsg = new MessageFactory(new ProtocolVersion(1, 0)).getChunkMessage(this.configuration.getPeerId(), msg.getFileId(), msg.getChunkNo(), chunkData);
         
-        this.configuration.getMDR().send(chunkMsg);
+        //this.configuration.getMDR().send(chunkMsg);
+        Logger.todo(this);
     }
 }

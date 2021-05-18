@@ -1,4 +1,4 @@
-import argparse, os, signal, subprocess, sys, time, re
+import argparse, os, signal, subprocess, sys, time, re, socket
 from threading import Thread, Lock
 from subprocess import PIPE
 
@@ -94,22 +94,43 @@ class PrintPeerStdout(Thread):
     def stop(self):
         self.running = False
 
+def get_server_port(peerId):
+    return 7099 + int(peerId);
 
-def run_peer(peerId):
-    os.execvp("java", ["java", "Main", args.v, str(peerId), "peer"+str(peerId), "224.0.0.1", "7099", "224.0.0.2", "7099", "224.0.0.3", "7099"])
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect(("8.8.8.8", 80))
+myip = s.getsockname()[0]
+s.close()
+
+def run_peer(peerId, first=False, firstServerPort=-1):
+    runArgs = [
+        "java",
+        "Main",
+        args.v, 
+        str(peerId),
+        "peer"+str(peerId),
+        str(get_server_port(peerId))
+    ]
+
+    if not first:
+        runArgs.append(myip)
+        runArgs.append(str(firstServerPort))
+
+    os.execvp("java", runArgs)
 
 
 processes = {}
 lock = Lock()
 
-def start_peer(peerId):
+
+def start_peer(peerId, first=False, firstServerPort=-1):
     os.chdir("src/build")
     r, w = os.pipe()
     newpid = os.fork()
     if newpid == 0:  # peer
         os.close(r)
         os.dup2(w, sys.stdout.fileno())  # stdout will be the pipe
-        run_peer(peerId)
+        run_peer(peerId, first, firstServerPort)
     else:  # parent
         os.close(w)
         processes[peerId] = {
@@ -140,8 +161,10 @@ def stop_peer_process(proc, wait=False):
 
 
 def start_peers():
-    for i in range(args.n):
-        start_peer(i)
+    firstServerPort = get_server_port(0)
+    start_peer(0, True)
+    for i in range(1, args.n):
+        start_peer(i, False, firstServerPort)
     print("\nCreated processes: \n" + str(processes), end="\n\n")
 
 

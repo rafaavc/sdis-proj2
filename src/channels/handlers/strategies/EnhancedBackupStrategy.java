@@ -37,7 +37,8 @@ public class EnhancedBackupStrategy extends BackupStrategy {
                     }
 
                     Logger.log("Storing chunk.");
-                    configuration.getMC().send(messageFactory.getStoredMessage(configuration.getPeerId(), msg.getFileId(), msg.getChunkNo()));
+                    //configuration.getMC().send(messageFactory.getStoredMessage(configuration.getPeerId(), msg.getFileId(), msg.getChunkNo()));
+                    Logger.todo(this);
 
                     StoredTracker.addStoredCount(configuration.getPeerState(), msg.getFileId(), msg.getChunkNo(), configuration.getPeerId());
 
@@ -89,7 +90,8 @@ public class EnhancedBackupStrategy extends BackupStrategy {
             public void run() {
                 try
                 {
-                    configuration.getMC().send(messageFactory.getStoredMessage(configuration.getPeerId(), msg.getFileId(), msg.getChunkNo()));
+                    //configuration.getMC().send(messageFactory.getStoredMessage(configuration.getPeerId(), msg.getFileId(), msg.getChunkNo()));
+                    Logger.todo(this);
                 } 
                 catch(Exception e) 
                 {

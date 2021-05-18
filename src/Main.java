@@ -17,15 +17,8 @@ import chord.Chord;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        // before joining chord need to set up tcp server (with argument 0 so it gets a random free port) and use the address and port of it here
-        Chord chord = new Chord(InetAddress.getLocalHost(), 8515, InetAddress.getByName("google.com"), 80);
-
-        //System.exit(1);
 
         PeerConfiguration configuration = parseArgs(args);
-
-
-
         Peer peer = new Peer(configuration);
 
         Registry registry = LocateRegistry.getRegistry();
@@ -33,9 +26,9 @@ public class Main {
 
         Runtime.getRuntime().addShutdownHook(new Thread() { 
             public void run() {
-                Logger.log("Closing multicast sockets and unbinding from registry..."); 
+                Logger.log("Closing SSL server and unbinding from registry..."); 
 
-                for (MulticastChannel channel : configuration.getChannels()) channel.close();
+                configuration.getServer().stop();
                 
                 configuration.getThreadScheduler().shutdown();
 
@@ -56,25 +49,32 @@ public class Main {
     }
 
     public static PeerConfiguration parseArgs(String args[]) throws Exception {
-        if (args.length != 9) throw new ArgsException(ArgsException.Type.ARGS_LENGTH);
+        if (args.length != 4 && args.length != 6) throw new ArgsException(ArgsException.Type.ARGS_LENGTH);
 
         // Need to verify better
         ProtocolVersion protocolVersion = new ProtocolVersion(args[0]);
         if (!protocolVersion.equals("1.0") && ! protocolVersion.equals("1.1")) throw new ArgsException(Type.UNKNOWN_VERSION_NO, protocolVersion.toString());
-        try
-        {
-            int peerId = Integer.parseInt(args[1]);
 
-            String serviceAccessPoint = args[2];
-            MulticastChannel mc = new MulticastChannel(ChannelType.CONTROL, args[3], Integer.parseInt(args[4])); // Multicast control
-            MulticastChannel mdb = new MulticastChannel(ChannelType.BACKUP, args[5], Integer.parseInt(args[6])); // Multicast data backup
-            MulticastChannel mdr = new MulticastChannel(ChannelType.RESTORE, args[7], Integer.parseInt(args[8])); // Multicast data restore
-
-            PeerConfiguration configuration = new PeerConfiguration(protocolVersion, peerId, serviceAccessPoint, mc, mdb, mdr);
-    
-            return configuration;
+        int peerId, serverPort;
+        try {
+            peerId = Integer.parseInt(args[1]);
         } catch(NumberFormatException e) {
             throw new ArgsException(Type.PEER_ID, args[1]);
         }
+
+        try {
+            serverPort = Integer.parseInt(args[3]);
+            if (serverPort <= 0) throw new Exception();
+        } catch(Exception e) {
+            throw new ArgsException(Type.SERVER_PORT, args[3]);
+        }
+
+        String serviceAccessPoint = args[2];
+
+        // TODO check if a preexisting peer's address is present
+
+        PeerConfiguration configuration = new PeerConfiguration(protocolVersion, peerId, serviceAccessPoint, serverPort);
+
+        return configuration;
     } 
 }

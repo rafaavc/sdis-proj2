@@ -1,42 +1,68 @@
 package configuration;
 
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadLocalRandom;
 
-import channels.MulticastChannel;
 import channels.handlers.strategies.BackupStrategy;
 import channels.handlers.strategies.EnhancedBackupStrategy;
 import channels.handlers.strategies.EnhancedRestoreStrategy;
 import channels.handlers.strategies.RestoreStrategy;
 import channels.handlers.strategies.VanillaBackupStrategy;
 import channels.handlers.strategies.VanillaRestoreStrategy;
+import chord.Chord;
 import exceptions.ArgsException;
 import files.FileManager;
 import messages.trackers.ChunkTracker;
+import sslengine.SSLServer;
 import state.PeerState;
+import utils.IPFinder;
+import utils.Logger;
 
 public class PeerConfiguration {
     private final int peerId;
     private final String serviceAccessPoint;
     private final ProtocolVersion protocolVersion;
-    private final MulticastChannel mc, mdb, mdr;
     private final PeerState state;
     private final ChunkTracker chunkTracker;
     private final ScheduledThreadPoolExecutor threadScheduler;
+    private final SSLServer server;
+    private final Chord chord;
 
-    public PeerConfiguration(ProtocolVersion protocolVersion, int peerId, String serviceAccessPoint, MulticastChannel mc, MulticastChannel mdb, MulticastChannel mdr) throws Exception {
+    public PeerConfiguration(ProtocolVersion protocolVersion, int peerId, String serviceAccessPoint, int serverPort) throws Exception {
+        this(protocolVersion, peerId, serviceAccessPoint, serverPort, null);
+    }
+
+    public PeerConfiguration(ProtocolVersion protocolVersion, int peerId, String serviceAccessPoint, int serverPort, InetSocketAddress preexistingNode) throws Exception {
         this.protocolVersion = protocolVersion;
         this.peerId = peerId;
         this.serviceAccessPoint = serviceAccessPoint;
-        this.mc = mc;
-        this.mdb = mdb;
-        this.mdr = mdr;
 
         this.state = PeerState.read(getRootDir());
         FileManager.createPeerStateAsynchronousChannel(getRootDir());
 
         this.chunkTracker = new ChunkTracker();
         this.threadScheduler = new ScheduledThreadPoolExecutor(30);
+
+        String ip = IPFinder.find().getHostAddress();
+        this.server = new SSLServer(ip, serverPort);
+
+        if (preexistingNode != null)
+            this.chord = new Chord(this, new InetSocketAddress(InetAddress.getLocalHost(), serverPort), preexistingNode);
+        else 
+            this.chord = new Chord(this, new InetSocketAddress(InetAddress.getLocalHost(), serverPort));
+
+        Logger.log("My IP is " + ip + "\nMy Chord ring id is " + this.chord.getId());
+    }
+
+    public Chord getChord() {
+        return chord;
+    }
+
+    public SSLServer getServer() {
+        return server;
     }
 
     public ScheduledThreadPoolExecutor getThreadScheduler() {
@@ -81,22 +107,6 @@ public class PeerConfiguration {
 
     public String getServiceAccessPoint() {
         return serviceAccessPoint;
-    }
-
-    public MulticastChannel[] getChannels() {
-        return new MulticastChannel[] { this.mc, this.mdb, this.mdr };
-    }
-
-    public MulticastChannel getMC() {
-        return mc;
-    }
-    
-    public MulticastChannel getMDB() {
-        return mdb;
-    }
-
-    public MulticastChannel getMDR() {
-        return mdr;
     }
 
     public ChunkTracker getChunkTracker() {

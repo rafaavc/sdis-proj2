@@ -1,4 +1,4 @@
-package sslEngine;
+package sslengine;
 
 import utils.Logger;
 
@@ -129,8 +129,12 @@ public class SSLClient extends SSLPeer{
         return this.executeHandshake(socket, this.engine);
     }
 
-    public void write(String message) throws Exception {
+    public void write(Message message) throws Exception {
         write(this.socket, this.engine, message.getBytes());
+    }
+
+    public void write(byte[] message) throws Exception {
+        write(this.socket, this.engine, message);
     }
 
     public void read() throws Exception {

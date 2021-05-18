@@ -1,5 +1,6 @@
 package actions;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -8,12 +9,13 @@ import java.util.concurrent.TimeUnit;
 import configuration.PeerConfiguration;
 import files.Chunk;
 import messages.trackers.StoredTracker;
+import sslengine.SSLClient;
 import state.ChunkPair;
 import state.FileInfo;
 import utils.Logger;
 import utils.Result;
 
-public class ChunksBackup implements Runnable {
+public class ChunksBackup extends Action implements Runnable {
     private final Map<Chunk, byte[]> chunksToSend;
     private int count, sleepAmount;
     private final PeerConfiguration configuration;
@@ -21,7 +23,8 @@ public class ChunksBackup implements Runnable {
     private final StoredTracker storedTracker;
     private final CompletableFuture<Result> future;
 
-    public ChunksBackup(CompletableFuture<Result> future, StoredTracker storedTracker, PeerConfiguration configuration, FileInfo info, Map<Chunk, byte[]> chunksToSend) {
+    public ChunksBackup(InetSocketAddress destination, SSLClient client, CompletableFuture<Result> future, StoredTracker storedTracker, PeerConfiguration configuration, FileInfo info, Map<Chunk, byte[]> chunksToSend) throws Exception {
+        super(destination, client);
         this.count = 1;
         this.sleepAmount = configuration.getProtocolVersion().equals("1.0") ? 1000 : 3000;
         this.configuration = configuration;
@@ -31,8 +34,8 @@ public class ChunksBackup implements Runnable {
         this.future = future;
     }
 
-    private ChunksBackup(CompletableFuture<Result> future, StoredTracker storedTracker, PeerConfiguration configuration, FileInfo info, Map<Chunk, byte[]> chunksToSend, int count, int sleepAmount) {
-        this(future, storedTracker, configuration, info, chunksToSend);
+    private ChunksBackup(InetSocketAddress destination, SSLClient client, CompletableFuture<Result> future, StoredTracker storedTracker, PeerConfiguration configuration, FileInfo info, Map<Chunk, byte[]> chunksToSend, int count, int sleepAmount) throws Exception {
+        this(destination, client, future, storedTracker, configuration, info, chunksToSend);
         this.count = count;
         this.sleepAmount = sleepAmount;
     }
@@ -45,8 +48,9 @@ public class ChunksBackup implements Runnable {
         try {
             for (Chunk chunk : chunksToSend.keySet()) 
             {
-                byte[] msg = chunksToSend.get(chunk);        
-                this.configuration.getMDB().send(msg);
+                byte[] msg = chunksToSend.get(chunk);
+                // this.configuration.getMDB().send(msg);
+                client.write(msg);
             } 
         }
         catch(Exception e) 
@@ -72,7 +76,11 @@ public class ChunksBackup implements Runnable {
 
                 if (count < 5 && chunksToSend.size() != 0)
                 {
-                    configuration.getThreadScheduler().execute(new ChunksBackup(future, storedTracker, configuration, info, chunksToSend, count+1, sleepAmount*2));
+                    try {
+                        configuration.getThreadScheduler().execute(new ChunksBackup(destination, client, future, storedTracker, configuration, info, chunksToSend, count+1, sleepAmount*2));
+                    } catch (Exception e) {
+                        Logger.error(e, true);
+                    }
                     return;
                 }
 
@@ -90,6 +98,7 @@ public class ChunksBackup implements Runnable {
                             String msg = "Wasn't able to backup file: chunk " + chunk.getChunkNo() + " was not backed up by any peers";
                             Logger.error(msg);
                             future.complete(new Result(false, msg));
+                            shutdown();
                             return;
                         }
                         info.addChunk(new ChunkPair(chunk.getChunkNo(), replicationDegree));
@@ -107,6 +116,7 @@ public class ChunksBackup implements Runnable {
                 Logger.log(msg);
                 builder.append(msg);
                 future.complete(new Result(true, builder.toString()));
+                shutdown();
             }
         }, sleepAmount, TimeUnit.MILLISECONDS);
     }

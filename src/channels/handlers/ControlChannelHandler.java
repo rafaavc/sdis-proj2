@@ -63,7 +63,8 @@ public class ControlChannelHandler extends Handler {
                                 try 
                                 {
                                     byte[] deleteMsg = msgFactoryVanilla.getDeleteMessage(configuration.getPeerId(), msg.getFileId());
-                                    configuration.getMC().send(deleteMsg);
+                                    //configuration.getMC().send(deleteMsg);
+                                    Logger.todo(this);
                                 } 
                                 catch(Exception e) 
                                 {

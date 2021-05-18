@@ -31,4 +31,8 @@ public class Logger {
     public static void log(Object obj) {
         System.out.println(obj);
     }
+
+    public static void todo(Object obj) {
+        System.out.println("[TODO] " + obj.getClass().getName());
+    }
 }

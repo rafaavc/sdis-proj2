@@ -1,5 +1,6 @@
 package actions;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -14,13 +15,14 @@ import state.FileInfo;
 import utils.Logger;
 import utils.Result;
 
-public class Backup {
+public class Backup extends Action {
     private final PeerConfiguration configuration;
     private final String filePath;
     private final int desiredReplicationDegree;
     private final CompletableFuture<Result> future;
 
-    public Backup(CompletableFuture<Result> future, PeerConfiguration configuration, String filePath, int desiredReplicationDegree) {
+    public Backup(InetSocketAddress destination, CompletableFuture<Result> future, PeerConfiguration configuration, String filePath, int desiredReplicationDegree) throws Exception {
+        super(destination);
         this.configuration = configuration;
         this.filePath = filePath;
         this.desiredReplicationDegree = desiredReplicationDegree;
@@ -47,8 +49,8 @@ public class Backup {
 
             StoredTracker storedTracker = StoredTracker.getNewTracker();
 
-            configuration.getThreadScheduler().execute(new ChunksBackup(future, storedTracker, configuration, info, chunksToSend));
-            
+            configuration.getThreadScheduler().execute(new ChunksBackup(destination, client, future, storedTracker, configuration, info, chunksToSend));
+
         } catch(Exception e) {
             Logger.error(e, future);
         }

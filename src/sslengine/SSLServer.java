@@ -1,4 +1,4 @@
-package sslEngine;
+package sslengine;
 
 import utils.Logger;
 
@@ -22,11 +22,14 @@ public class SSLServer extends SSLPeer {
 
     private Selector selector;
 
+    public SSLServer(String address, int port) throws Exception {
+        this("TLS", address, port);
+    }
 
     public SSLServer(String protocol, String address, int port) throws Exception {
         this.context = SSLContext.getInstance(protocol);
         //define path to store the key managers and trust managers
-        this.context.init(createKeyManagers("../sslEngine/keys/server.jks","123456", "123456"), createTrustManagers("../sslEngine/keys/truststore.jks","123456"), new SecureRandom());
+        this.context.init(createKeyManagers("../sslengine/keys/server.jks","123456", "123456"), createTrustManagers("../sslengine/keys/truststore.jks","123456"), new SecureRandom());
 
         SSLSession session = context.createSSLEngine().getSession();
         this.appData = ByteBuffer.allocate(session.getApplicationBufferSize());

@@ -71,7 +71,8 @@ public class Reclaim {
             for (ChunkInfo chunk : chunksToRemove) {
                 byte[] msg = new MessageFactory(new ProtocolVersion(1, 0)).getRemovedMessage(this.configuration.getPeerId(), chunk.getFileId(), chunk.getChunkNo());
                 
-                this.configuration.getMC().send(msg);
+                //this.configuration.getMC().send(msg);
+                Logger.todo(this);
                 
                 fileManager.deleteChunk(chunk.getFileId(), chunk.getChunkNo());
                 this.configuration.getPeerState().deleteChunk(chunk);

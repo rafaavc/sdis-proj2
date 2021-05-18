@@ -32,7 +32,8 @@ public class Delete {
         public void run() {
             try
             {
-                configuration.getMC().send(msg);
+                //configuration.getMC().send(msg);
+                Logger.todo(this);
             } 
             catch(Exception e) 
             {

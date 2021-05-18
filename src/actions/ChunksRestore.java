@@ -46,7 +46,8 @@ public class ChunksRestore implements Runnable {
             {
                 if (chunkTracker.hasReceivedChunk(info.getFileId(), chunk.getChunkNo())) continue;
                 byte[] msg = chunksToGet.get(chunk);        
-                this.configuration.getMC().send(msg);
+                //this.configuration.getMC().send(msg);
+                Logger.todo(this);
             } 
         }
         catch(Exception e) 

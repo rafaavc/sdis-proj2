@@ -1,27 +1,30 @@
 package chord;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class ChordNode {
-    private final InetAddress address;
-    private final int port;
+    private final InetSocketAddress address;
     private final int id;
 
-    public ChordNode (InetAddress a, int port, int id) {
+    public ChordNode (InetSocketAddress a, int id) {
         this.address = a;
         this.id = id;
-        this.port = port;
+    }
+
+    public InetSocketAddress getInetSocketAddress() {
+        return address;
     }
 
     public InetAddress getInetAddress() {
-        return address;
+        return address.getAddress();
+    }
+
+    public int getPort() {
+        return address.getPort();
     }
 
     public int getId() {
         return id;
-    }
-
-    public int getPort() {
-        return port;
     }
 }

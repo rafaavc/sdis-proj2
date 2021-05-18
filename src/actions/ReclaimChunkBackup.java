@@ -37,7 +37,8 @@ public class ReclaimChunkBackup implements Runnable {
 
         try
         {
-            configuration.getMDB().send(putchunkMsg);
+            //configuration.getMDB().send(putchunkMsg);
+            Logger.todo(this);
         }
         catch(Exception e)
         {
@@ -52,7 +53,8 @@ public class ReclaimChunkBackup implements Runnable {
             public void run() {
                 try
                 {
-                    configuration.getMC().send(storedMsg);
+                    //configuration.getMC().send(storedMsg);
+                    Logger.todo(this);
                 }
                 catch(Exception e)
                 {

@@ -17,7 +17,6 @@ public class P implements ClientInterface {
 
     public P(int serverPort, int clientPort) throws Exception {
         this.server = new SSLServer("TLS", "localhost", serverPort);
-        this.client = new SSLClient("TLS", "localhost", clientPort);
     }
 
     public static void main(String[] args) throws Exception {
@@ -31,6 +30,7 @@ public class P implements ClientInterface {
 
         Thread thread = new Thread(new ServerThread(peer.server));
         thread.start();
+        // this.client.shutdown();
     }
 
     @Override
@@ -65,8 +65,13 @@ public class P implements ClientInterface {
 
     @Override
     public void ssl() throws Exception {
+        this.client = new SSLClient("TLS", "localhost", 8081);
         this.client.connect();
         this.client.write("Hello");
+        this.client.read();
+        this.client.write("asdasdadadads");
+        this.client.read();
+        this.client.write("pppppp");
         this.client.read();
         this.client.shutdown();
     }

@@ -3,6 +3,9 @@ package sslEngine;
 import utils.Logger;
 
 import javax.net.ssl.*;
+
+import messages.Message;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -15,6 +18,10 @@ public class SSLClient extends SSLPeer{
     private int port;
     private SSLEngine engine;
     private SocketChannel socket;
+
+    public SSLClient(String address, int port) throws Exception {
+        this("TLS", address, port);
+    }
 
     public SSLClient(String protocol, String address, int port) throws Exception {
         this.address = address;
@@ -78,11 +85,11 @@ public class SSLClient extends SSLPeer{
     }
 
     @Override
-    protected void write(SocketChannel socket, SSLEngine engine, String message) throws Exception {
+    protected void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
         Logger.log("Going to write to the server...");
 
         this.appData.clear();
-        this.appData.put(message.getBytes());
+        this.appData.put(message);
         this.appData.flip();
         while(this.appData.hasRemaining()){
             this.netData.clear();
@@ -93,7 +100,7 @@ public class SSLClient extends SSLPeer{
                     while (this.netData.hasRemaining()){
                         socket.write(this.netData);
                     }
-                    Logger.log("Sent to the client " + message);
+                    Logger.log("Sent to the server " + message);
                     break;
                 case CLOSED:
                     this.closeConnection(socket, engine);
@@ -123,7 +130,7 @@ public class SSLClient extends SSLPeer{
     }
 
     public void write(String message) throws Exception {
-        write(this.socket, this.engine, message);
+        write(this.socket, this.engine, message.getBytes());
     }
 
     public void read() throws Exception {

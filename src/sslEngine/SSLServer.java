@@ -49,6 +49,8 @@ public class SSLServer extends SSLPeer {
     protected void read(SocketChannel socket, SSLEngine engine) throws Exception {
         Logger.log("Going to read from the client...");
 
+        Logger.log("Client address: " + socket.getRemoteAddress().toString());
+
         this.peerNetData.clear();
         int bytesRead = socket.read(this.peerNetData);
         if(bytesRead > 0){
@@ -78,7 +80,7 @@ public class SSLServer extends SSLPeer {
             this.peerAppData.get(bytes);
             System.out.println("Received from client: " + new String(bytes));
 
-            this.write(socket, engine, "I am your server");
+            this.write(socket, engine, "I am your server".getBytes());
         }
         else if(bytesRead < 0){
             Logger.log("End of stream, going to close connection with client");
@@ -87,11 +89,11 @@ public class SSLServer extends SSLPeer {
     }
 
     @Override
-    protected void write(SocketChannel socket, SSLEngine engine, String message) throws Exception {
+    protected void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
         Logger.log("Going to write to the client...");
 
         this.appData.clear();
-        this.appData.put(message.getBytes());
+        this.appData.put(message);
         this.appData.flip();
         while(this.appData.hasRemaining()){
             this.netData.clear();
@@ -133,6 +135,7 @@ public class SSLServer extends SSLPeer {
                 if(key.isAcceptable())
                     this.accept(key);
                 else if(key.isReadable())
+                    // submit a thread to the executor?
                     this.read((SocketChannel) key.channel(), (SSLEngine) key.attachment());
             }
         }
@@ -151,6 +154,8 @@ public class SSLServer extends SSLPeer {
 
         SocketChannel socket = ((ServerSocketChannel) key.channel()).accept();
         socket.configureBlocking(false);
+
+        Logger.log("Client ip: " + socket.getRemoteAddress().toString());
 
         SSLEngine engine = context.createSSLEngine();
         engine.setUseClientMode(false);

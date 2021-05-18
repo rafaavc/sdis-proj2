@@ -6,6 +6,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+
+import sslEngine.SSLClient;
+
 import java.lang.Math;
 
 import utils.Logger;
@@ -21,9 +24,9 @@ public class Chord {
      * @param peerAddress the address of the peer that this class is in respect to.
      * @param port the port of the peer that this class is in respect to to.
      * @param preexistingNode the address of a peer that already belongs to the P2P network.
-     * @throws NoSuchAlgorithmException
+     * @throws Exception
      */
-    public Chord(InetAddress peerAddress, int port, InetAddress preexistingNode, int preexistingNodePort) throws NoSuchAlgorithmException {    
+    public Chord(InetAddress peerAddress, int port, InetAddress preexistingNode, int preexistingNodePort) throws Exception {    
         this(peerAddress, port);
 
         // Joining a preexisting chord ring
@@ -51,7 +54,7 @@ public class Chord {
         this.fingerTable.add(self);
     }
 
-    private void join(InetAddress preexistingNode, int preexistingNodePort) {
+    private void join(InetAddress preexistingNode, int preexistingNodePort) throws Exception {
         this.predecessor = null;
 
         // send LOOKUP message to the preexisting node
@@ -62,8 +65,9 @@ public class Chord {
 
     /**
      * Daniel
+     * @throws Exception
      */
-    public void updateFingers() {
+    public void updateFingers() throws Exception {
         for (int finger = 0; finger < this.m - 1; finger++) {
             ChordNode fingerValue = lookup(self.getId() + (int) Math.pow(2, finger));
             if (fingerTable.get(finger) != null) {
@@ -100,13 +104,6 @@ public class Chord {
     }
 
     /**
-     * Removes the peer from the P2P network.
-     */
-    public void leave() {
-
-    }
-
-    /**
      * Gets the closest preceding node to the key k that this node knows of
      */
     public ChordNode closestPrecedingNode(int k) {
@@ -120,8 +117,9 @@ public class Chord {
 
     /**
      * Finds who holds or will hold the value of a given key.
+     * @throws Exception
      */
-    public ChordNode lookup(int k) {
+    public ChordNode lookup(int k) throws Exception {
         if (k == self.getId()) return self;
 
         // this is important because the successor is the only node whose position the current node knows with certainty
@@ -130,7 +128,8 @@ public class Chord {
         ChordNode closestPreceding = this.closestPrecedingNode(k);
 
         // need to check if the closest preceding is this node?
-        
+        SSLClient client = new SSLClient(closestPreceding.getInetAddress().toString(), closestPreceding.getPort());
+        //client.write(new Message);
         // TODO send LOOKUP message to the closes preceding node
         return closestPreceding; // change to the response of the LOOKUP message
     }

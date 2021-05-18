@@ -30,7 +30,7 @@ public abstract class SSLPeer {
 
     protected abstract void read(SocketChannel socket, SSLEngine engine) throws Exception;
 
-    protected abstract void write(SocketChannel socket, SSLEngine engine, String message) throws Exception;
+    protected abstract void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception;
 
     protected boolean executeHandshake(SocketChannel socketChannel, SSLEngine engine) throws IOException {
 

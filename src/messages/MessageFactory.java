@@ -19,11 +19,11 @@ public class MessageFactory {
         return msg.getBytes();
     }
 
-    public byte[] getPutchunkMessage(int senderId, String fileId, int replicationDeg, int chunkNo, byte[] body) throws ArgsException {
+    public byte[] getPutchunkMessage(int senderId, String key, int replicationDeg, int chunkNo, byte[] body) throws ArgsException {
         Message msg = new Message(version, 
                                     MessageType.PUTCHUNK,
                                     senderId,
-                                    fileId,
+                                    key,
                                     chunkNo,
                                     replicationDeg,
                                     body);

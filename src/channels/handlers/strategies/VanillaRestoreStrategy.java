@@ -5,6 +5,7 @@ import configuration.ProtocolVersion;
 import files.FileManager;
 import messages.Message;
 import messages.MessageFactory;
+import sslengine.SSLClient;
 import utils.Logger;
 
 public class VanillaRestoreStrategy extends RestoreStrategy {
@@ -19,6 +20,11 @@ public class VanillaRestoreStrategy extends RestoreStrategy {
         byte[] chunkMsg = new MessageFactory(new ProtocolVersion(1, 0)).getChunkMessage(this.configuration.getPeerId(), msg.getFileId(), msg.getChunkNo(), chunkData);
         
         //this.configuration.getMDR().send(chunkMsg);
-        Logger.todo(this);
+        SSLClient client = new SSLClient(configuration.getServer().getAddress(), configuration.getServer().getPort());
+        client.connect();
+        client.write(chunkMsg);
+        client.read();
+        client.shutdown();
+        //Logger.todo(this);
     }
 }

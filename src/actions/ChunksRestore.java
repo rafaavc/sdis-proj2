@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import configuration.PeerConfiguration;
 import files.FileManager;
 import messages.trackers.ChunkTracker;
+import sslengine.SSLClient;
 import state.ChunkPair;
 import state.FileInfo;
 import utils.Logger;
@@ -42,13 +43,18 @@ public class ChunksRestore implements Runnable {
         ChunkTracker chunkTracker = configuration.getChunkTracker();
 
         try {
+            SSLClient client = new SSLClient(configuration.getServer().getAddress(), configuration.getServer().getPort());
+            client.connect();
             for (ChunkPair chunk : chunksToGet.keySet()) 
             {
                 if (chunkTracker.hasReceivedChunk(info.getFileId(), chunk.getChunkNo())) continue;
-                byte[] msg = chunksToGet.get(chunk);        
+                byte[] msg = chunksToGet.get(chunk);
                 //this.configuration.getMC().send(msg);
-                Logger.todo(this);
-            } 
+                //Logger.todo(this);
+                client.write(msg);
+                client.read();
+            }
+            client.shutdown();
         }
         catch(Exception e) 
         {

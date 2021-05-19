@@ -6,6 +6,7 @@ import messages.Message;
 import messages.MessageFactory;
 import messages.trackers.StoredTracker;
 import messages.trackers.PutchunkTracker;
+import sslengine.SSLClient;
 import state.ChunkInfo;
 import state.ChunkPair;
 import state.FileInfo;
@@ -64,7 +65,12 @@ public class ControlChannelHandler extends Handler {
                                 {
                                     byte[] deleteMsg = msgFactoryVanilla.getDeleteMessage(configuration.getPeerId(), msg.getFileId());
                                     //configuration.getMC().send(deleteMsg);
-                                    Logger.todo(this);
+                                    //Logger.todo(this);
+                                    SSLClient client = new SSLClient(configuration.getServer().getAddress(), configuration.getServer().getPort());
+                                    client.connect();
+                                    client.write(deleteMsg);
+                                    client.read();
+                                    client.shutdown();
                                 } 
                                 catch(Exception e) 
                                 {

@@ -30,7 +30,7 @@ public class EnhancedRestoreStrategy extends RestoreStrategy {
         byte[] chunkMsg = new MessageFactory(new ProtocolVersion(1, 1)).getChunkMessage(this.configuration.getPeerId(), msg.getFileId(), msg.getChunkNo(), portData);
         
         //this.configuration.getMDR().send(chunkMsg);
-        Logger.todo(this);
+        //Logger.todo(this);
 
         socket.setSoTimeout(5000);  
         try {

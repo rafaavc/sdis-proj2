@@ -22,11 +22,17 @@ public class SSLServer extends SSLPeer {
 
     private Selector selector;
 
+    private String address;
+
+    private int port;
+
     public SSLServer(String address, int port) throws Exception {
         this("TLS", address, port);
     }
 
     public SSLServer(String protocol, String address, int port) throws Exception {
+        this.address = address;
+        this.port = port;
         this.context = SSLContext.getInstance(protocol);
         //define path to store the key managers and trust managers
         this.context.init(createKeyManagers("../sslengine/keys/server.jks","123456", "123456"), createTrustManagers("../sslengine/keys/truststore.jks","123456"), new SecureRandom());
@@ -121,6 +127,14 @@ public class SSLServer extends SSLPeer {
                     throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
             }
         }
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public int getPort() {
+        return port;
     }
 
     public void start() throws Exception {

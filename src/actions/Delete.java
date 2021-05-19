@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import configuration.PeerConfiguration;
 import configuration.ProtocolVersion;
 import messages.MessageFactory;
+import sslengine.SSLClient;
 import utils.Logger;
 import utils.Result;
 
@@ -33,7 +34,12 @@ public class Delete {
             try
             {
                 //configuration.getMC().send(msg);
-                Logger.todo(this);
+                //Logger.todo(this);
+                SSLClient client = new SSLClient(configuration.getServer().getAddress(), configuration.getServer().getPort());
+                client.connect();
+                client.write(msg);
+                client.read();
+                client.shutdown();
             } 
             catch(Exception e) 
             {

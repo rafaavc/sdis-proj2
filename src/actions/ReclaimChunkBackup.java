@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import configuration.PeerConfiguration;
 import messages.trackers.StoredTracker;
+import sslengine.SSLClient;
 import state.ChunkInfo;
 import utils.Logger;
 
@@ -34,11 +35,16 @@ public class ReclaimChunkBackup implements Runnable {
     @Override
     public void run() {
         ScheduledThreadPoolExecutor threadScheduler = configuration.getThreadScheduler();
-
+        
         try
         {
+            SSLClient client = new SSLClient(configuration.getServer().getAddress(), configuration.getServer().getPort());
+            client.connect();
+            client.write(putchunkMsg);;
+            client.read();
+            client.shutdown();
             //configuration.getMDB().send(putchunkMsg);
-            Logger.todo(this);
+            //Logger.todo(this);
         }
         catch(Exception e)
         {
@@ -54,7 +60,7 @@ public class ReclaimChunkBackup implements Runnable {
                 try
                 {
                     //configuration.getMC().send(storedMsg);
-                    Logger.todo(this);
+                    //Logger.todo(this);
                 }
                 catch(Exception e)
                 {

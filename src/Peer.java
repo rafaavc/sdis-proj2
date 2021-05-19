@@ -53,7 +53,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
         CompletableFuture<Result> f = new CompletableFuture<>();
 
         //new Backup(f, configuration, filePath, desiredReplicationDegree).execute();
-        Logger.todo(this);
+        //Logger.todo(this);
         
         try
         {

@@ -3,6 +3,7 @@ package actions;
 import configuration.PeerConfiguration;
 import configuration.ProtocolVersion;
 import messages.MessageFactory;
+import sslengine.SSLClient;
 import utils.Logger;
 
 public class CheckDeleted {
@@ -14,12 +15,18 @@ public class CheckDeleted {
 
     public void execute() {
         try {
+            SSLClient client = new SSLClient(configuration.getServer().getAddress(), configuration.getServer().getPort());
+            client.connect();
             for (String fileId : configuration.getPeerState().getBackedUpFileIds())
             {
                 byte[] msg = new MessageFactory(new ProtocolVersion(1, 1)).getFilecheckMessage(configuration.getPeerId(), fileId);
+                client.write(msg);
+                client.read();
                 //configuration.getMC().send(msg);
-                Logger.todo(this);
+                //Logger.todo(this);
+
             }
+            client.shutdown();
         } catch(Exception e) {
             e.printStackTrace();
         }

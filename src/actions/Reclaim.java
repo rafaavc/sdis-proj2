@@ -10,6 +10,7 @@ import configuration.PeerConfiguration;
 import configuration.ProtocolVersion;
 import files.FileManager;
 import messages.MessageFactory;
+import sslengine.SSLClient;
 import state.ChunkInfo;
 import utils.Logger;
 import utils.Result;
@@ -67,16 +68,21 @@ public class Reclaim {
             // Logger.log("Chunks to remove: " + chunksToRemove);
 
             FileManager fileManager = new FileManager(this.configuration.getRootDir());
-
+            SSLClient client = new SSLClient(configuration.getServer().getAddress(), configuration.getServer().getPort());
+            client.connect();
             for (ChunkInfo chunk : chunksToRemove) {
                 byte[] msg = new MessageFactory(new ProtocolVersion(1, 0)).getRemovedMessage(this.configuration.getPeerId(), chunk.getFileId(), chunk.getChunkNo());
                 
                 //this.configuration.getMC().send(msg);
-                Logger.todo(this);
+                //Logger.todo(this);
+                client.write(msg);
+                client.read();
                 
                 fileManager.deleteChunk(chunk.getFileId(), chunk.getChunkNo());
                 this.configuration.getPeerState().deleteChunk(chunk);
             }
+
+            client.shutdown();
 
             String msg = "Reclaimed space successfuly.";
             Logger.log(msg);

@@ -31,27 +31,49 @@ public class Chord {
      * @param preexistingNode the address of a peer that already belongs to the P2P network.
      * @throws Exception
      */
-    public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress, InetSocketAddress preexistingNode) throws Exception {    
-        this(configuration, peerAddress);
-
-        // Joining a preexisting chord ring
-        this.join(preexistingNode);
-    }
-
-    public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress) throws NoSuchAlgorithmException, ArgsException {
-        String original = peerAddress.getAddress().getHostAddress() + peerAddress.getPort();
-
-        // look more into consistent hashing
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        int id = ByteBuffer.wrap(digest.digest(original.getBytes())).getInt();
+    public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress, InetSocketAddress preexistingNode) throws Exception {
+        int id = -1;        
+        if (preexistingNode == null) id = this.generateNodeId(peerAddress);
+        else id = this.getCollisionFreeId(peerAddress, preexistingNode);
 
         this.self = new ChordNode(peerAddress, id);
         this.m = 32; // an integer has 32 bits
         this.configuration = configuration;
         this.messageFactory = new MessageFactory(configuration.getProtocolVersion());
 
-        // Creating a new chord ring
-        this.create();
+        if (preexistingNode == null) this.create();
+        else this.join(preexistingNode);
+    }
+
+    public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress) throws Exception {
+        this(configuration, peerAddress, null);
+    }
+
+    private int generateNodeId(InetSocketAddress peerAddress) throws NoSuchAlgorithmException {
+        String original = peerAddress.getAddress().getHostAddress() + peerAddress.getPort();
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+
+        return ByteBuffer.wrap(digest.digest(original.getBytes())).getInt();
+    }
+
+    private int getCollisionFreeId(InetSocketAddress peerAddress, InetSocketAddress preexistingPeerAddress) throws Exception {
+        int id = generateNodeId(peerAddress);
+        int originalId = id;
+
+        while (true) {
+            ChordNode respectiveNode = this.lookup(preexistingPeerAddress, id);  // Send lookup to the preexisting node
+            
+            if (respectiveNode.getId() == id)
+            {
+                id++;
+                if (id == originalId)
+                    throw new Exception("I can't enter chord ring because there is already one node in the ring.");
+            } 
+            else break;
+        }
+
+        return id;
     }
 
     public int getId() {
@@ -129,22 +151,22 @@ public class Chord {
      * @throws Exception
      */
     public ChordNode lookup(int k) throws Exception {
-        if (k == self.getId()) return self;
 
         // this is important because the successor is the only node whose position the current node knows with certainty
         if (k > self.getId() && k <= fingerTable.get(0).getId()) return fingerTable.get(0);
         
         ChordNode closestPreceding = this.closestPrecedingNode(k);
 
-        // TODO start LOOKUP action
+        return lookup(closestPreceding.getInetSocketAddress(), k);
+    }
 
-        // need to check if the closest preceding is this node?
-        SSLClient client = new SSLClient(closestPreceding.getInetAddress().toString(), closestPreceding.getPort());
+    private ChordNode lookup(InetSocketAddress peerAddress, int k) throws Exception {
+        SSLClient client = new SSLClient(peerAddress.getHostString(), peerAddress.getPort());
         client.write(messageFactory.getLookupMessage(self.getId(), k));
         
         client.read();
 
-        return closestPreceding; // change to the response of the LOOKUP message
+        return null; // TODO change to the response of the LOOKUP message
     }
 }
 

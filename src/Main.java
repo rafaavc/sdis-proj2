@@ -7,14 +7,11 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-import channels.MulticastChannel;
-import channels.MulticastChannel.ChannelType;
 import configuration.PeerConfiguration;
 import configuration.ProtocolVersion;
 import exceptions.ArgsException;
 import exceptions.ArgsException.Type;
 import utils.Logger;
-import chord.Chord;
 
 public class Main {
     public static void main(String[] args) throws Exception {

@@ -1,6 +1,5 @@
 package configuration;
 
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -17,6 +16,7 @@ import exceptions.ArgsException;
 import files.FileManager;
 import messages.trackers.ChunkTracker;
 import sslengine.SSLServer;
+import sslengine.ServerThread;
 import state.PeerState;
 import utils.IPFinder;
 import utils.Logger;
@@ -48,6 +48,7 @@ public class PeerConfiguration {
 
         String ip = IPFinder.find().getHostAddress();
         this.server = new SSLServer(ip, serverPort);
+        this.threadScheduler.submit(new ServerThread(this.server));
 
         if (preexistingNode != null)
             this.chord = new Chord(this, new InetSocketAddress(InetAddress.getLocalHost(), serverPort), preexistingNode);

@@ -1,13 +1,13 @@
-package channels.handlers;
+package server.handlers;
 
 import messages.Message;
 import messages.trackers.PutchunkTracker;
 import messages.trackers.StoredTracker;
+import server.handlers.strategies.BackupStrategy;
 import utils.Logger;
 
 import java.net.InetAddress;
 
-import channels.handlers.strategies.BackupStrategy;
 import configuration.PeerConfiguration;
 
 public class BackupChannelHandler extends Handler {

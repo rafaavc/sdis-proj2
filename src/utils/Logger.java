@@ -1,12 +1,27 @@
 package utils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import channels.MulticastChannel;
-import channels.MulticastChannel.ChannelType;
 import messages.Message;
 
 public class Logger {
+    public enum DebugType {
+        SSL,
+        MESSAGE
+    }
+
+    private static List<DebugType> active = new ArrayList<>();
+    static {
+        setActive(DebugType.SSL);
+        setActive(DebugType.MESSAGE);
+    }
+
+    public static void setActive(DebugType type) {
+        if (!active.contains(type)) active.add(type);
+    }
+
     public static void error(Throwable thrown, boolean showStackTrace) {
         System.err.println("WAS THROWN: " + thrown.getMessage());
         if (showStackTrace) {
@@ -24,8 +39,14 @@ public class Logger {
         System.err.println(msg);
     }
 
-    public static void log(ChannelType type, Message msg) {
-        System.out.println("[" + MulticastChannel.messages.get(type) + "] " + msg);
+    public static void debug(Message message) {
+        if (!active.contains(DebugType.MESSAGE)) return;
+        System.out.println("[MESSAGE] " + message.toString());
+    }
+
+    public static void debug(DebugType debugType, String message) {
+        if (!active.contains(debugType)) return;
+        System.out.println("[" + debugType + "] " + message);
     }
 
     public static void log(Object obj) {

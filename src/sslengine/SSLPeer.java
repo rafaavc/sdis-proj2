@@ -1,6 +1,7 @@
 package sslengine;
 
 import utils.Logger;
+import utils.Logger.DebugType;
 
 import javax.net.ssl.*;
 import java.io.FileInputStream;
@@ -28,13 +29,11 @@ public abstract class SSLPeer {
 
     protected ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    protected abstract void read(SocketChannel socket, SSLEngine engine) throws Exception;
-
     protected abstract void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception;
 
     protected boolean executeHandshake(SocketChannel socketChannel, SSLEngine engine) throws IOException {
 
-        Logger.log("Starting handshake");
+        Logger.debug(DebugType.SSL, "Starting handshake");
 
         SSLEngineResult result;
         SSLEngineResult.HandshakeStatus status;
@@ -144,7 +143,7 @@ public abstract class SSLPeer {
             }
         }
 
-        Logger.log("Finalized handshake");
+        Logger.debug(DebugType.SSL, "Finalized handshake");
 
         return true;
     }

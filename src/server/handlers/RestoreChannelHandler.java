@@ -1,4 +1,4 @@
-package channels.handlers;
+package server.handlers;
 
 import messages.trackers.ChunkTracker;
 import utils.Logger;

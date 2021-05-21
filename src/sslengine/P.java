@@ -1,22 +1,34 @@
 package sslengine;
 
 import configuration.ClientInterface;
+import server.Router;
 import state.PeerState;
+import utils.Logger;
 import utils.Result;
 
+import java.nio.channels.SocketChannel;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
+import javax.net.ssl.SSLEngine;
+
 public class P implements ClientInterface {
 
     private SSLServer server;
     private SSLClient client;
 
+    private class MyRouter implements Router {
+        public void handle(byte[] dataReceived, SocketChannel socket, SSLEngine engine) throws Exception {
+            Logger.log("Received from client with address " + socket.getRemoteAddress().toString() + ":\n" + new String(dataReceived));
+            server.write(socket, engine, "I am your server".getBytes());
+        }
+    }
+
     public P(int serverPort, int clientPort) throws Exception {
-        this.server = new SSLServer("TLS", "localhost", serverPort);
+        this.server = new SSLServer("TLS", "localhost", serverPort, new MyRouter());
     }
 
     public static void main(String[] args) throws Exception {
@@ -64,15 +76,19 @@ public class P implements ClientInterface {
     }
 
     @Override
-    public void ssl() throws Exception {
-        this.client = new SSLClient("TLS", "localhost", 8081);
-        this.client.connect();
-        //this.client.write("Hello");
-        this.client.read();
-        //this.client.write("asdasdadadads");
-        this.client.read();
-        //this.client.write("pppppp");
-        this.client.read();
-        this.client.shutdown();
+    public void sendMessageToServer() throws RemoteException {
+        try {
+            this.client = new SSLClient("TLS", "localhost", 8081);
+            this.client.connect();
+            //this.client.write("Hello");
+            this.client.read();
+            //this.client.write("asdasdadadads");
+            this.client.read();
+            //this.client.write("pppppp");
+            this.client.read();
+            this.client.shutdown();
+        } catch(Exception e) {
+            Logger.error(e, true);
+        }
     }
 }

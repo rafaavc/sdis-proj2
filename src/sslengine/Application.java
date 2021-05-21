@@ -12,6 +12,6 @@ public class Application {
         Registry registry = LocateRegistry.getRegistry();
         ClientInterface stub = (ClientInterface) registry.lookup(args[0]);
 
-        stub.ssl();
+        stub.sendMessageToServer();
     }
 }

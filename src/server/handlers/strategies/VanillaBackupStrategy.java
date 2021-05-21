@@ -1,4 +1,4 @@
-package channels.handlers.strategies;
+package server.handlers.strategies;
 
 import java.util.concurrent.TimeUnit;
 

@@ -5,16 +5,18 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadLocalRandom;
 
-import channels.handlers.strategies.BackupStrategy;
-import channels.handlers.strategies.EnhancedBackupStrategy;
-import channels.handlers.strategies.EnhancedRestoreStrategy;
-import channels.handlers.strategies.RestoreStrategy;
-import channels.handlers.strategies.VanillaBackupStrategy;
-import channels.handlers.strategies.VanillaRestoreStrategy;
 import chord.Chord;
 import exceptions.ArgsException;
 import files.FileManager;
 import messages.trackers.ChunkTracker;
+import server.Router;
+import server.ServerRouter;
+import server.handlers.strategies.BackupStrategy;
+import server.handlers.strategies.EnhancedBackupStrategy;
+import server.handlers.strategies.EnhancedRestoreStrategy;
+import server.handlers.strategies.RestoreStrategy;
+import server.handlers.strategies.VanillaBackupStrategy;
+import server.handlers.strategies.VanillaRestoreStrategy;
 import sslengine.SSLServer;
 import sslengine.ServerThread;
 import state.PeerState;
@@ -47,7 +49,7 @@ public class PeerConfiguration {
         this.threadScheduler = new ScheduledThreadPoolExecutor(30);
 
         String ip = IPFinder.find().getHostAddress();
-        this.server = new SSLServer(ip, serverPort);
+        this.server = new SSLServer(ip, serverPort, new ServerRouter(this));
         this.threadScheduler.submit(new ServerThread(this.server));
 
         if (preexistingNode != null)

@@ -1,4 +1,4 @@
-package channels.handlers.strategies;
+package server.handlers.strategies;
 
 import java.net.ServerSocket;
 import java.net.Socket;

@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import configuration.PeerConfiguration;
-import exceptions.ArgsException;
 import messages.MessageFactory;
 import sslengine.SSLClient;
 
@@ -41,8 +40,8 @@ public class Chord {
         this.configuration = configuration;
         this.messageFactory = new MessageFactory(configuration.getProtocolVersion());
 
-        /*if (preexistingNode == null)*/ this.create();
-        //else this.join(preexistingNode);
+        if (preexistingNode == null) this.create();
+        else this.join(preexistingNode);
     }
 
     public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress) throws Exception {
@@ -79,6 +78,10 @@ public class Chord {
     public int getId() {
         return self.getId();
     }
+    
+    public ChordNode getSuccessor() {
+        return fingerTable.get(0);
+    }
 
     private void create() {
         this.predecessor = null;
@@ -90,8 +93,8 @@ public class Chord {
 
         // send LOOKUP message to the preexisting node
         // and set the successor to the value of the return
-        ChordNode successor = this.lookup(self.getId());  // TODO change to the value returned by the LOOKUP message
-        this.fingerTable.add(successor);
+        //ChordNode successor = this.lookup(preexistingNode, self.getId());  // TODO change to the value returned by the LOOKUP message
+        this.fingerTable.add(new ChordNode(preexistingNode, 10));  // TODO change to the successor returned by lookup
     }
 
     /**

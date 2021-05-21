@@ -223,7 +223,7 @@ while running:
                     print("That id is already in use!")
                     continue
                 print("Starting peer with id " + str(n))
-                start_peer(n)
+                start_peer(n, False, get_server_port(0))  # the first peer is always the one with port 0
                 continue
 
 

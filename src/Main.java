@@ -75,11 +75,13 @@ public class Main {
             try 
             {
                 int preexistingPeerPort = Integer.parseInt(args[5]);
-                if (serverPort <= 0) throw new Exception();
+                if (serverPort <= 0) throw new NumberFormatException();
+
+                System.out.println("Preexisting peer port = " + preexistingPeerPort);
 
                 return new PeerConfiguration(protocolVersion, peerId, serviceAccessPoint, serverPort, new InetSocketAddress(preexistingPeerAddress, preexistingPeerPort));
             } 
-            catch(Exception e) 
+            catch(NumberFormatException e) 
             {
                 throw new ArgsException(Type.PREEXISTING_PEER_PORT, args[3]);
             }

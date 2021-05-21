@@ -1,8 +1,12 @@
 package sslengine;
 
 import utils.Logger;
+import utils.Logger.DebugType;
 
 import javax.net.ssl.*;
+
+import server.Router;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -24,15 +28,18 @@ public class SSLServer extends SSLPeer {
 
     private String address;
 
+    private Router router;
+
     private int port;
 
-    public SSLServer(String address, int port) throws Exception {
-        this("TLS", address, port);
+    public SSLServer(String address, int port, Router router) throws Exception {
+        this("TLS", address, port, router);
     }
 
-    public SSLServer(String protocol, String address, int port) throws Exception {
+    public SSLServer(String protocol, String address, int port, Router router) throws Exception {
         this.address = address;
         this.port = port;
+        this.router = router;
         this.context = SSLContext.getInstance(protocol);
         //define path to store the key managers and trust managers
         this.context.init(createKeyManagers("../sslengine/keys/server.jks","123456", "123456"), createTrustManagers("../sslengine/keys/truststore.jks","123456"), new SecureRandom());
@@ -54,11 +61,8 @@ public class SSLServer extends SSLPeer {
 
     }
 
-    @Override
     protected void read(SocketChannel socket, SSLEngine engine) throws Exception {
-        Logger.log("Going to read from the client...");
-
-        Logger.log("Client address: " + socket.getRemoteAddress().toString());
+        Logger.debug(DebugType.SSL, "Going to read from the client...");
 
         this.peerNetData.clear();
         int bytesRead = socket.read(this.peerNetData);
@@ -72,7 +76,7 @@ public class SSLServer extends SSLPeer {
                         this.peerAppData.flip();
                         break;
                     case CLOSED:
-                        Logger.log("Closing connection with client");
+                        Logger.debug(DebugType.SSL, "Closing connection with client");
                         this.closeConnection(socket, engine);
                         return;
                     case BUFFER_UNDERFLOW:
@@ -87,19 +91,17 @@ public class SSLServer extends SSLPeer {
             }
             byte[] bytes = new byte[this.peerAppData.remaining()];
             this.peerAppData.get(bytes);
-            System.out.println("Received from client: " + new String(bytes));
-
-            this.write(socket, engine, "I am your server".getBytes());
+            router.handle(bytes, socket, engine);
         }
         else if(bytesRead < 0){
-            Logger.log("End of stream, going to close connection with client");
+            Logger.debug(DebugType.SSL, "End of stream, going to close connection with client");
             this.processEndOfStream(socket, engine);
         }
     }
 
     @Override
-    protected void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
-        Logger.log("Going to write to the client...");
+    public void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
+        Logger.debug(DebugType.SSL, "Going to write to the client...");
 
         this.appData.clear();
         this.appData.put(message);
@@ -113,7 +115,7 @@ public class SSLServer extends SSLPeer {
                     while (this.netData.hasRemaining()){
                         socket.write(this.netData);
                     }
-                    Logger.log("Sent to the client " + message);
+                    Logger.debug(DebugType.SSL, "Sent to the client " + message);
                     break;
                 case CLOSED:
                     this.closeConnection(socket, engine);
@@ -139,7 +141,7 @@ public class SSLServer extends SSLPeer {
 
     public void start() throws Exception {
 
-        Logger.log("Server ready!");
+        Logger.debug(DebugType.SSL, "Server ready!");
 
         while(this.available){
             this.selector.select();
@@ -157,7 +159,7 @@ public class SSLServer extends SSLPeer {
             }
         }
 
-        Logger.log("Server stopped!");
+        Logger.debug(DebugType.SSL, "Server stopped!");
     }
 
     public void stop(){
@@ -167,12 +169,10 @@ public class SSLServer extends SSLPeer {
     }
 
     public void accept(SelectionKey key) throws IOException {
-        Logger.log("New connection on hold!");
+        Logger.debug(DebugType.SSL, "New connection on hold!");
 
         SocketChannel socket = ((ServerSocketChannel) key.channel()).accept();
         socket.configureBlocking(false);
-
-        Logger.log("Client ip: " + socket.getRemoteAddress().toString());
 
         SSLEngine engine = context.createSSLEngine();
         engine.setUseClientMode(false);
@@ -182,7 +182,7 @@ public class SSLServer extends SSLPeer {
             socket.register(selector, SelectionKey.OP_READ, engine);
         else{
             socket.close();
-            Logger.log("Couldn't connect due to a handshake failure");
+            Logger.error("Couldn't connect due to a handshake failure!");  // TODO maybe throw exception?
         }
 
     }

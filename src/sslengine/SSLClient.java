@@ -1,6 +1,7 @@
 package sslengine;
 
 import utils.Logger;
+import utils.Logger.DebugType;
 
 import javax.net.ssl.*;
 
@@ -11,6 +12,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
+import java.util.function.Consumer;
 
 public class SSLClient extends SSLPeer{
 
@@ -28,7 +30,7 @@ public class SSLClient extends SSLPeer{
         this.port = port;
 
         SSLContext context = SSLContext.getInstance(protocol);
-        context.init(createKeyManagers("../sslEngine/keys/client.jks", "123456", "123456"), createTrustManagers("../sslEngine/keys/truststore.jks", "123456"), new SecureRandom());
+        context.init(createKeyManagers("../sslengine/keys/client.jks", "123456", "123456"), createTrustManagers("../sslengine/keys/truststore.jks", "123456"), new SecureRandom());
         this.engine = context.createSSLEngine(address, port);
         this.engine.setUseClientMode(true);
 
@@ -40,9 +42,8 @@ public class SSLClient extends SSLPeer{
     }
 
 
-    @Override
-    protected void read(SocketChannel socket, SSLEngine engine) throws Exception {
-        Logger.log("Going to read from the server...");
+    protected void read(SocketChannel socket, SSLEngine engine, Consumer<byte[]> consumer) throws Exception {
+        Logger.debug(DebugType.SSL, "Going to read from the server...");
 
         this.peerNetData.clear();
         boolean read = true;
@@ -74,7 +75,8 @@ public class SSLClient extends SSLPeer{
 
                 byte[] bytes = new byte[this.peerAppData.remaining()];
                 this.peerAppData.get(bytes);
-                System.out.println("Received from server: " + new String(bytes));
+                Logger.debug(DebugType.SSL, "[DEFAULT CLIENT READER] Received from server:\n" + new String(bytes));
+                if (consumer != null) consumer.accept(bytes);
             }
             else if(bytesRead < 0){
                 this.processEndOfStream(socket, engine);
@@ -86,7 +88,7 @@ public class SSLClient extends SSLPeer{
 
     @Override
     protected void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
-        Logger.log("Going to write to the server...");
+        Logger.debug(DebugType.SSL, "Going to write to the server...");
 
         this.appData.clear();
         this.appData.put(message);
@@ -100,7 +102,7 @@ public class SSLClient extends SSLPeer{
                     while (this.netData.hasRemaining()){
                         socket.write(this.netData);
                     }
-                    Logger.log("Sent to the server " + message);
+                    Logger.debug(DebugType.SSL, "Sent to the server " + message);
                     break;
                 case CLOSED:
                     this.closeConnection(socket, engine);
@@ -137,12 +139,17 @@ public class SSLClient extends SSLPeer{
         write(this.socket, this.engine, message);
     }
 
+
     public void read() throws Exception {
-        read(this.socket, this.engine);
+        read(null);
+    }
+
+    public void read(Consumer<byte[]> consumer) throws Exception {
+        read(this.socket, this.engine, consumer);
     }
 
     public void shutdown() throws IOException {
-        Logger.log("Going to close connection with the server...");
+        Logger.debug(DebugType.SSL, "Going to close connection with the server...");
         this.closeConnection(this.socket, this.engine);
         this.executor.shutdown();
     }

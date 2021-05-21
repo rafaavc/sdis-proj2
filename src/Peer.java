@@ -7,11 +7,14 @@ import java.util.concurrent.CompletableFuture;
 
 import configuration.ClientInterface;
 import configuration.PeerConfiguration;
+import files.FileManager;
+import sslengine.SSLClient;
 import state.PeerState;
 import actions.Backup;
 import actions.CheckDeleted;
 import actions.Delete;
 import actions.Restore;
+import chord.ChordNode;
 import utils.Logger;
 import utils.Result;
 import actions.Reclaim;
@@ -37,6 +40,19 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
     }
 
     /* RMI interface */
+
+    public void sendMessageToServer() throws RemoteException {
+        try {
+            ChordNode successor = configuration.getChord().getSuccessor();
+            SSLClient client = new SSLClient(successor.getInetAddress().getHostAddress(), successor.getPort());
+            client.connect();
+            client.write(new FileManager().read("../../lorem.txt"));
+            client.read();
+            client.shutdown();
+        } catch (Exception e) {
+            Logger.error(e, true);
+        }
+    }
 
     public Result backup(String filePath, int desiredReplicationDegree) throws RemoteException {
         Path path = Paths.get(filePath);
@@ -120,11 +136,6 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
             Logger.error(e, true);
         }
         return null;
-    }
-
-    @Override
-    public void ssl() throws RemoteException, IOException {
-
     }
 
     public PeerState getPeerState() {

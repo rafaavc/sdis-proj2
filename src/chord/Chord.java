@@ -33,16 +33,16 @@ public class Chord {
      */
     public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress, InetSocketAddress preexistingNode) throws Exception {
         int id = -1;        
-        if (preexistingNode == null) id = this.generateNodeId(peerAddress);
-        else id = this.getCollisionFreeId(peerAddress, preexistingNode);
+        /*if (preexistingNode == null)*/ id = this.generateNodeId(peerAddress);
+        //else id = this.getCollisionFreeId(peerAddress, preexistingNode);
 
         this.self = new ChordNode(peerAddress, id);
         this.m = 32; // an integer has 32 bits
         this.configuration = configuration;
         this.messageFactory = new MessageFactory(configuration.getProtocolVersion());
 
-        if (preexistingNode == null) this.create();
-        else this.join(preexistingNode);
+        /*if (preexistingNode == null)*/ this.create();
+        //else this.join(preexistingNode);
     }
 
     public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress) throws Exception {

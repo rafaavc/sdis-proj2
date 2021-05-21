@@ -115,23 +115,51 @@ public class Chord {
      * Daniel
      * Verifies if the predecessor of the node's successor is still the node itself
      */
-    public void stabilize() {
+    public void stabilize() throws Exception {
+        ChordNode successor = fingerTable.get(0);
         
+        SSLClient client = new SSLClient(successor.getInetSocketAddress().getHostName(), successor.getPort());
+        client.write(messageFactory.getPredecessorMessage(self.getId()));
+        client.read();
+        
+        int sucPredId = client.getPeerAppData().getInt();
+
+        client.shutdown();
+
+        if (sucPredId != -1) {
+            ChordNode sucPredecessor = lookup(sucPredId);
+
+            if (successor.getId() > self.getId()) {
+                if (sucPredId > self.getId() && sucPredId < successor.getId()) {
+                    fingerTable.set(0, sucPredecessor);
+                }
+            } else {
+                if (sucPredId > self.getId() || sucPredId < successor.getId()) {
+                    fingerTable.set(0, sucPredecessor);
+                }
+            }
+        }
+
+        notifyPredecessor(fingerTable.get(0));
     }
 
     /** 
-     * Daniel
+     * 
      * Notifies a peer, letting him know that this node is it's predecessor
     */
-    public void notifyPredecessor() {
-
+    public void notifyPredecessor(ChordNode successor) throws Exception {
+        SSLClient client = new SSLClient(successor.getInetSocketAddress().getHostName(), successor.getPort());
+        client.write(messageFactory.notifyPredecessorMessage(self.getId()));
+        client.shutdown();
     }
 
     /**
      * Daniel
      */
-    public void checkPredecessor() {
-
+    public void checkPredecessor() throws Exception {
+        SSLClient client = new SSLClient(predecessor.getInetSocketAddress().getHostName(), predecessor.getPort());
+        
+        if (!client.connect()) predecessor = null;
     }
 
     /**

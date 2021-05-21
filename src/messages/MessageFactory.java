@@ -19,6 +19,21 @@ public class MessageFactory {
         return msg;
     }
 
+    public Message getPredecessorMessage(int senderId) {
+        Message msg = new Message(version, MessageType.GETPREDECESSOR, senderId);
+        return msg;
+    }
+
+    public Message notifyPredecessorMessage(int senderId) {
+        Message msg = new Message(version, MessageType.NOTIFYPREDECESSOR, senderId);
+        return msg;
+    }
+
+    public Message checkMessage(int senderId) {
+        Message msg = new Message(version, MessageType.CHECK, senderId);
+        return msg;
+    }
+
     public byte[] getPutchunkMessage(int senderId, String key, int replicationDeg, int chunkNo, byte[] body) throws ArgsException {
         Message msg = new Message(version, 
                                     MessageType.PUTCHUNK,

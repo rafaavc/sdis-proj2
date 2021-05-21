@@ -212,4 +212,8 @@ public abstract class SSLPeer {
         trustFactory.init(trustStore);
         return trustFactory.getTrustManagers();
     }
+
+    public ByteBuffer getPeerAppData() {
+        return peerAppData;
+    }
 }

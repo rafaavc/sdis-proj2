@@ -24,7 +24,10 @@ public class Message {
         DELETE,
         REMOVED,
         FILECHECK,
-        LOOKUP
+        LOOKUP,
+        GETPREDECESSOR,
+        NOTIFYPREDECESSOR,
+        CHECK
     }
 
     private static final String CRLF = new String(new byte[] { 0xD, 0xA });
@@ -39,12 +42,20 @@ public class Message {
         messageTypeStrings.put(MessageType.REMOVED, "REMOVED");
         messageTypeStrings.put(MessageType.FILECHECK, "FILECHECK");
         messageTypeStrings.put(MessageType.LOOKUP, "LOOKUP");
+        messageTypeStrings.put(MessageType.GETPREDECESSOR, "GETPREDECESSOR");
+        messageTypeStrings.put(MessageType.NOTIFYPREDECESSOR, "NOTIFYPREDECESSOR");
+        messageTypeStrings.put(MessageType.CHECK, "CHECK");
     }
 
     public Message(ProtocolVersion version, int senderId, String fileId) {
         this.version = version;
         this.senderId = senderId;
         this.fileId = fileId;
+    }
+
+    public Message(ProtocolVersion version, MessageType messageType, int senderId) {
+        this(version, senderId, null);
+        this.messageType = messageType;
     }
 
     public Message(ProtocolVersion version, MessageType messageType, int senderId, String fileId) {

@@ -22,35 +22,35 @@ public class VanillaBackupStrategy extends BackupStrategy {
         
         Logger.log("Storing chunk.");
 
-        StoredTracker.addStoredCount(configuration.getPeerState(), msg.getFileId(), msg.getChunkNo(), this.configuration.getPeerId());
-        ChunkInfo chunk = new ChunkInfo(msg.getFileId(), (float)(msg.getBody().length / 1000.), msg.getChunkNo(), storedTracker.getStoredCount(msg.getFileId(), msg.getChunkNo()), msg.getReplicationDeg());
+        // StoredTracker.addStoredCount(configuration.getPeerState(), msg.getFileId(), msg.getChunkNo(), this.configuration.getPeerId());
+        // ChunkInfo chunk = new ChunkInfo(msg.getFileId(), (float)(msg.getBody().length / 1000.), msg.getChunkNo(), storedTracker.getStoredCount(msg.getFileId(), msg.getChunkNo()), msg.getReplicationDeg());
 
-        storedTracker.addNotifier(msg.getFileId(), msg.getChunkNo(), () -> {
-            synchronized(chunk) {
-                try {
-                    int storedCount = storedTracker.getStoredCount(msg.getFileId(), msg.getChunkNo());
-                    if (storedCount > chunk.getPerceivedReplicationDegree()) chunk.setPerceivedReplicationDegree(storedCount);
-                } catch(Exception e){
-                    Logger.error(e, true);
-                }
-            }
-        });
+        // storedTracker.addNotifier(msg.getFileId(), msg.getChunkNo(), () -> {
+        //     synchronized(chunk) {
+        //         try {
+        //             int storedCount = storedTracker.getStoredCount(msg.getFileId(), msg.getChunkNo());
+        //             if (storedCount > chunk.getPerceivedReplicationDegree()) chunk.setPerceivedReplicationDegree(storedCount);
+        //         } catch(Exception e){
+        //             Logger.error(e, true);
+        //         }
+        //     }
+        // });
 
-        configuration.getPeerState().addChunk(chunk);
+        // configuration.getPeerState().addChunk(chunk);
 
-        files.writeChunk(msg.getFileId(), msg.getChunkNo(), msg.getBody());
+        // files.writeChunk(msg.getFileId(), msg.getChunkNo(), msg.getBody());
 
         sendStored(msg);
 
         configuration.getThreadScheduler().schedule(new Runnable() {
             @Override
             public void run() {
-                try {
-                    int countsReceived = storedTracker.getStoredCount(msg.getFileId(), msg.getChunkNo());
-                    chunk.setPerceivedReplicationDegree(countsReceived);
-                } catch(Exception e) {
-                    Logger.error(e, true);
-                }
+                // try {
+                //     int countsReceived = storedTracker.getStoredCount(msg.getFileId(), msg.getChunkNo());
+                //     chunk.setPerceivedReplicationDegree(countsReceived);
+                // } catch(Exception e) {
+                //     Logger.error(e, true);
+                // }
                 StoredTracker.removeTracker(storedTracker);
             }
         }, 10, TimeUnit.SECONDS);

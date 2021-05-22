@@ -77,8 +77,6 @@ public class Main {
                 int preexistingPeerPort = Integer.parseInt(args[5]);
                 if (serverPort <= 0) throw new NumberFormatException();
 
-                System.out.println("Preexisting peer port = " + preexistingPeerPort);
-
                 return new PeerConfiguration(protocolVersion, peerId, serviceAccessPoint, serverPort, new InetSocketAddress(preexistingPeerAddress, preexistingPeerPort));
             } 
             catch(NumberFormatException e) 

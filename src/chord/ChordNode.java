@@ -27,4 +27,9 @@ public class ChordNode {
     public int getId() {
         return id;
     }
+
+    @Override
+    public String toString() {
+        return "NODE[id=" + id + "]@" + address.getAddress().getHostAddress() + ":" + address.getPort();
+    }
 }

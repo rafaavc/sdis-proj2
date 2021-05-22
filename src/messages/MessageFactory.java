@@ -1,5 +1,6 @@
 package messages;
 
+import chord.ChordNode;
 import configuration.ProtocolVersion;
 import exceptions.ArgsException;
 import messages.Message.MessageType;
@@ -12,89 +13,89 @@ public class MessageFactory {
     }
 
     public Message getLookupMessage(int senderId, int key) {
-        Message msg = new Message(version,
+        return new Message(version,
                                     MessageType.LOOKUP,
                                     senderId,
-                                    String.valueOf(key));
-        return msg;
+                                    key);
+    }
+
+    public Message getLookupResponseMessage(int senderId, int fileKey, ChordNode node) {
+        return new Message(version, MessageType.LOOKUPRESPONSE, senderId, fileKey, node);
     }
 
     public Message getPredecessorMessage(int senderId) {
-        Message msg = new Message(version, MessageType.GETPREDECESSOR, senderId);
-        return msg;
+        return new Message(version, MessageType.GETPREDECESSOR, senderId);
     }
 
-    public Message notifyPredecessorMessage(int senderId) {
-        Message msg = new Message(version, MessageType.NOTIFYPREDECESSOR, senderId);
-        return msg;
+    public Message getNotifyPredecessorMessage(int senderId) {
+        return new Message(version, MessageType.NOTIFYPREDECESSOR, senderId);
     }
 
-    public Message checkMessage(int senderId) {
-        Message msg = new Message(version, MessageType.CHECK, senderId);
-        return msg;
+    public Message getCheckMessage(int senderId) {
+        return new Message(version, MessageType.CHECK, senderId);
     }
 
-    public byte[] getPutchunkMessage(int senderId, String key, int replicationDeg, int chunkNo, byte[] body) throws ArgsException {
+    public byte[] getPutchunkMessage(int senderId, int fileKey, int replicationDeg, int chunkNo, byte[] body) throws ArgsException {
         Message msg = new Message(version, 
                                     MessageType.PUTCHUNK,
                                     senderId,
-                                    key,
+                                    fileKey,
                                     chunkNo,
                                     replicationDeg,
                                     body);
         return msg.getBytes();
     }
 
-    public byte[] getStoredMessage(int senderId, String fileId, int chunkNo) throws ArgsException {
+    public byte[] getStoredMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
         Message msg = new Message(version, 
                                     MessageType.STORED,
                                     senderId,
-                                    fileId,
+                                    fileKey,
                                     chunkNo);
         return msg.getBytes();
     }
 
-    public byte[] getDeleteMessage(int senderId, String fileId) throws ArgsException {
+    public byte[] getDeleteMessage(int senderId, int fileKey) throws ArgsException {
         Message msg = new Message(version, 
                                     MessageType.DELETE,
                                     senderId,
-                                    fileId);
+                                    fileKey);
         return msg.getBytes();
     }
 
-    public byte[] getGetchunkMessage(int senderId, String fileId, int chunkNo) throws ArgsException {
+    public byte[] getGetchunkMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
         Message msg = new Message(version, 
                                     MessageType.GETCHUNK,
                                     senderId,
-                                    fileId,
+                                    fileKey,
                                     chunkNo);
         return msg.getBytes();
     }
 
-    public byte[] getChunkMessage(int senderId, String fileId, int chunkNo, byte[] body) throws ArgsException {
+    public byte[] getChunkMessage(int senderId, int fileKey, int chunkNo, byte[] body) throws ArgsException {
         Message msg = new Message(version, 
                                     MessageType.CHUNK,
                                     senderId,
-                                    fileId,
+                                    fileKey,
                                     chunkNo,
                                     body);
         return msg.getBytes();
     }
 
-    public byte[] getRemovedMessage(int senderId, String fileId, int chunkNo) throws ArgsException {
+    public byte[] getRemovedMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
         Message msg = new Message(version, 
                                     MessageType.REMOVED,
                                     senderId,
-                                    fileId,
+                                    fileKey,
                                     chunkNo);
         return msg.getBytes();
     }
 
-    public byte[] getFilecheckMessage(int senderId, String fileId) throws ArgsException {
+    public byte[] getFilecheckMessage(int senderId, int fileKey) throws ArgsException {
         Message msg = new Message(version, 
                                     MessageType.FILECHECK,
                                     senderId,
-                                    fileId);
+                                    fileKey);
         return msg.getBytes();
     }
 }

@@ -6,14 +6,19 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import configuration.PeerConfiguration;
+import messages.Message;
 import messages.MessageFactory;
+import messages.MessageParser;
 import sslengine.SSLClient;
 
 import java.lang.Math;
 
 import utils.Logger;
+import utils.Logger.DebugType;
 
 public class Chord {
     private final List<ChordNode> fingerTable = new ArrayList<>();
@@ -61,7 +66,7 @@ public class Chord {
         int originalId = id;
 
         while (true) {
-            ChordNode respectiveNode = this.lookup(preexistingPeerAddress, id);  // Send lookup to the preexisting node
+            ChordNode respectiveNode = this.lookup(preexistingPeerAddress, id).get();  // Send lookup to the preexisting node
             
             if (respectiveNode.getId() == id)
             {
@@ -103,7 +108,7 @@ public class Chord {
      */
     public void updateFingers() throws Exception {
         for (int finger = 0; finger < this.m - 1; finger++) {
-            ChordNode fingerValue = lookup(self.getId() + (int) Math.pow(2, finger));
+            ChordNode fingerValue = lookup(self.getId() + (int) Math.pow(2, finger)).get();
             if (fingerTable.get(finger) != null) {
                 fingerTable.set(finger, fingerValue);
             } else if (fingerTable.get(finger - 1) != null) { // if it's filled up to this point
@@ -130,7 +135,7 @@ public class Chord {
         client.shutdown();
 
         if (sucPredId != -1) {
-            ChordNode sucPredecessor = lookup(sucPredId);
+            ChordNode sucPredecessor = lookup(sucPredId).get();
 
             if (successor.getId() > self.getId()) {
                 if (sucPredId > self.getId() && sucPredId < successor.getId()) {
@@ -152,7 +157,7 @@ public class Chord {
     */
     public void notifyPredecessor(ChordNode successor) throws Exception {
         SSLClient client = new SSLClient(successor.getInetSocketAddress().getHostName(), successor.getPort());
-        client.write(messageFactory.notifyPredecessorMessage(self.getId()));
+        client.write(messageFactory.getNotifyPredecessorMessage(self.getId()));
         client.shutdown();
     }
 
@@ -170,6 +175,7 @@ public class Chord {
      */
     public ChordNode closestPrecedingNode(int k) {
         for (int i = this.m - 1; i >= 0; i--) {
+            if (i > fingerTable.size() - 1) continue;
             ChordNode finger = fingerTable.get(i);
             int fingerId = finger.getId();
             if (fingerId > self.getId()  && fingerId <= k) return finger;
@@ -181,23 +187,41 @@ public class Chord {
      * Finds who holds or will hold the value of a given key.
      * @throws Exception
      */
-    public ChordNode lookup(int k) throws Exception {
-
+    public Future<ChordNode> lookup(int k) throws Exception {
+        
         // this is important because the successor is the only node whose position the current node knows with certainty
-        if (k > self.getId() && k <= fingerTable.get(0).getId()) return fingerTable.get(0);
+        if (fingerTable.size() == 1 || k > self.getId() && k <= fingerTable.get(0).getId()) {
+            CompletableFuture<ChordNode> future = new CompletableFuture<>();
+            future.complete(fingerTable.get(0));
+            return future;
+        }
         
         ChordNode closestPreceding = this.closestPrecedingNode(k);
 
         return lookup(closestPreceding.getInetSocketAddress(), k);
     }
 
-    private ChordNode lookup(InetSocketAddress peerAddress, int k) throws Exception {
+    private Future<ChordNode> lookup(InetSocketAddress peerAddress, int k) throws Exception {
         SSLClient client = new SSLClient(peerAddress.getHostString(), peerAddress.getPort());
         client.write(messageFactory.getLookupMessage(self.getId(), k));
-        
-        client.read();
 
-        return null; // TODO change to the response of the LOOKUP message
+        Logger.debug(DebugType.CHORD, "Sending LOOKUP of key " + k + " to " + peerAddress.toString());
+
+        CompletableFuture<ChordNode> future = new CompletableFuture<>();
+        
+        client.read((byte[] data, Integer length) -> {
+            // TODO do this in a better way
+            try {
+                Message message = MessageParser.parse(data, length);
+                Logger.log("Received: " + new String(data));
+                future.complete(message.getNode());
+
+            } catch (Exception e) {
+                Logger.error(e, true);
+            }
+        });
+
+        return future;
     }
 }
 

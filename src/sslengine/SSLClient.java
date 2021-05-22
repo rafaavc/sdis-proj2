@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public class SSLClient extends SSLPeer{
 
@@ -42,7 +42,7 @@ public class SSLClient extends SSLPeer{
     }
 
 
-    protected void read(SocketChannel socket, SSLEngine engine, Consumer<byte[]> consumer) throws Exception {
+    protected void read(SocketChannel socket, SSLEngine engine, BiConsumer<byte[], Integer> consumer) throws Exception {
         Logger.debug(DebugType.SSL, "Going to read from the server...");
 
         this.peerNetData.clear();
@@ -76,7 +76,7 @@ public class SSLClient extends SSLPeer{
                 byte[] bytes = new byte[this.peerAppData.remaining()];
                 this.peerAppData.get(bytes);
                 Logger.debug(DebugType.SSL, "[DEFAULT CLIENT READER] Received from server:\n" + new String(bytes));
-                if (consumer != null) consumer.accept(bytes);
+                if (consumer != null) consumer.accept(bytes, bytesRead);
             }
             else if(bytesRead < 0){
                 this.processEndOfStream(socket, engine);
@@ -144,7 +144,7 @@ public class SSLClient extends SSLPeer{
         read(null);
     }
 
-    public void read(Consumer<byte[]> consumer) throws Exception {
+    public void read(BiConsumer<byte[], Integer> consumer) throws Exception {
         read(this.socket, this.engine, consumer);
     }
 

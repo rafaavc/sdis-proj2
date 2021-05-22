@@ -25,19 +25,19 @@ public class BackupChannelHandler extends Handler {
                 {
                     StoredTracker storedTracker = StoredTracker.getNewTracker();
 
-                    peerState.removeDeletedFile(msg.getFileId());
-                    PutchunkTracker.addPutchunkReceived(msg.getFileId(), msg.getChunkNo());
-                    if (peerState.hasChunk(msg.getFileId(), msg.getChunkNo())) {
-                        Logger.log("Already had chunk!");
-                        backupStrategy.sendAlreadyHadStored(msg);
-                        break;
-                    } else if (peerState.ownsFileWithId(msg.getFileId())) {
-                        Logger.log("I am the file owner!");
-                        break;
-                    } else if (peerState.getMaximumStorage() != -1 && peerState.getStorageAvailable() < msg.getBodySizeKB()) {
-                        Logger.log("Not enough space available for backup.");
-                        break;
-                    }
+                    // peerState.removeDeletedFile(msg.getFileFe());
+                    // PutchunkTracker.addPutchunkReceived(msg.getFileId(), msg.getChunkNo());
+                    // if (peerState.hasChunk(msg.getFileId(), msg.getChunkNo())) {
+                    //     Logger.log("Already had chunk!");
+                    //     backupStrategy.sendAlreadyHadStored(msg);
+                    //     break;
+                    // } else if (peerState.ownsFileWithId(msg.getFileId())) {
+                    //     Logger.log("I am the file owner!");
+                    //     break;
+                    // } else if (peerState.getMaximumStorage() != -1 && peerState.getStorageAvailable() < msg.getBodySizeKB()) {
+                    //     Logger.log("Not enough space available for backup.");
+                    //     break;
+                    // }
 
                     backupStrategy.backup(storedTracker, msg);
                 } 

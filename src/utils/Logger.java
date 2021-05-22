@@ -9,13 +9,15 @@ import messages.Message;
 public class Logger {
     public enum DebugType {
         SSL,
-        MESSAGE
+        MESSAGE,
+        CHORD
     }
 
     private static List<DebugType> active = new ArrayList<>();
     static {
-        setActive(DebugType.SSL);
+        //setActive(DebugType.SSL);
         setActive(DebugType.MESSAGE);
+        setActive(DebugType.CHORD);
     }
 
     public static void setActive(DebugType type) {
@@ -39,9 +41,9 @@ public class Logger {
         System.err.println(msg);
     }
 
-    public static void debug(Message message) {
+    public static void debug(Message message, String address) {
         if (!active.contains(DebugType.MESSAGE)) return;
-        System.out.println("[MESSAGE] " + message.toString());
+        System.out.println("[MESSAGE](from " + address + "):\n" + message.toString());
     }
 
     public static void debug(DebugType debugType, String message) {

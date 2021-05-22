@@ -21,7 +21,7 @@ public class P implements ClientInterface {
     private SSLClient client;
 
     private class MyRouter implements Router {
-        public void handle(byte[] dataReceived, SocketChannel socket, SSLEngine engine) throws Exception {
+        public void handle(byte[] dataReceived, int length, SocketChannel socket, SSLEngine engine) throws Exception {
             Logger.log("Received from client with address " + socket.getRemoteAddress().toString() + ":\n" + new String(dataReceived));
             server.write(socket, engine, "I am your server".getBytes());
         }

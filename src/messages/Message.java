@@ -1,16 +1,20 @@
 package messages;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import chord.ChordNode;
 import configuration.ProtocolVersion;
 
 public class Message {
     private final ProtocolVersion version;
+    private final int senderId, fileKey;
+    private ChordNode node = null;
     private MessageType messageType;
-    private final int senderId;
-    private final String fileId;
     private int chunkNo = -1;
     private short replicationDeg = -1;
 
@@ -25,6 +29,7 @@ public class Message {
         REMOVED,
         FILECHECK,
         LOOKUP,
+        LOOKUPRESPONSE,
         GETPREDECESSOR,
         NOTIFYPREDECESSOR,
         CHECK
@@ -42,49 +47,61 @@ public class Message {
         messageTypeStrings.put(MessageType.REMOVED, "REMOVED");
         messageTypeStrings.put(MessageType.FILECHECK, "FILECHECK");
         messageTypeStrings.put(MessageType.LOOKUP, "LOOKUP");
+        messageTypeStrings.put(MessageType.LOOKUPRESPONSE, "LOOKUPRESPONSE");
         messageTypeStrings.put(MessageType.GETPREDECESSOR, "GETPREDECESSOR");
         messageTypeStrings.put(MessageType.NOTIFYPREDECESSOR, "NOTIFYPREDECESSOR");
         messageTypeStrings.put(MessageType.CHECK, "CHECK");
     }
 
-    public Message(ProtocolVersion version, int senderId, String fileId) {
+    public Message(ProtocolVersion version, int senderId, int fileKey) {
         this.version = version;
         this.senderId = senderId;
-        this.fileId = fileId;
+        this.fileKey = fileKey;
+    }
+
+    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, ChordNode node) {
+        this(version, senderId, fileKey);
+        this.messageType = messageType;
+        this.node = node;
     }
 
     public Message(ProtocolVersion version, MessageType messageType, int senderId) {
-        this(version, senderId, null);
+        this(version, senderId, -1);
         this.messageType = messageType;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, String fileId) {
-        this(version, senderId, fileId);
+    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey) {
+        this(version, senderId, fileKey);
         this.messageType = messageType;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, String fileId, int chunkNo) {
-        this(version, messageType, senderId, fileId);
+    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, int chunkNo) {
+        this(version, messageType, senderId, fileKey);
         this.chunkNo = chunkNo;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, String fileId, int chunkNo, int replicationDeg) {
-        this(version, messageType, senderId, fileId, chunkNo);
+    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, int chunkNo, int replicationDeg) {
+        this(version, messageType, senderId, fileKey, chunkNo);
         this.replicationDeg = (short) replicationDeg;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, String fileId, int chunkNo, byte[] body) {
-        this(version, messageType, senderId, fileId, chunkNo);
+    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, int chunkNo, byte[] body) {
+        this(version, messageType, senderId, fileKey, chunkNo);
         this.body = body;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, String fileId, int chunkNo, int replicationDeg, byte[] body) {
-        this(version, messageType, senderId, fileId, chunkNo, replicationDeg);
+    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, int chunkNo, int replicationDeg, byte[] body) {
+        this(version, messageType, senderId, fileKey, chunkNo, replicationDeg);
         this.body = body;
     }
 
     public Message setChunkNo(int chunkNo) {
         this.chunkNo = chunkNo;
+        return this;
+    }
+
+    public Message setNode(String address, int port, int nodeId) throws UnknownHostException {
+        this.node = new ChordNode(new InetSocketAddress(InetAddress.getByName(address), port), nodeId);
         return this;
     }
 
@@ -112,8 +129,8 @@ public class Message {
         return (float) (body.length / 1000.);
     }
 
-    public String getFileId() {
-        return fileId;
+    public int getFileKey() {
+        return fileKey;
     }
 
     public MessageType getMessageType() {
@@ -126,6 +143,11 @@ public class Message {
 
     public ProtocolVersion getVersion() {
         return version;
+    }
+
+    public ChordNode getNode() throws Exception {
+        if (this.node == null) throw new Exception("Trying to access node of message without this field.");
+        return node;
     }
 
     public int getChunkNo() throws Exception {
@@ -158,9 +180,14 @@ public class Message {
         components.add(version.toString());
         components.add(messageTypeStrings.get(messageType));
         components.add(String.valueOf(senderId));
-        if (fileId != null) components.add(fileId);
+        if (fileKey != -1) components.add(String.valueOf(fileKey));
         if (chunkNo != -1) components.add(String.valueOf(chunkNo));
         if (replicationDeg != -1) components.add(String.valueOf(replicationDeg));
+        if (node != null) {
+            components.add(node.getInetAddress().getHostAddress());
+            components.add(String.valueOf(node.getPort()));
+            components.add(String.valueOf(node.getId()));
+        }
         return components;
     }
 

@@ -27,7 +27,7 @@ public class EnhancedRestoreStrategy extends RestoreStrategy {
         byte[] portData = String.valueOf(socket.getLocalPort()).getBytes();
 
         // send the chunk msg with the port
-        byte[] chunkMsg = new MessageFactory(new ProtocolVersion(1, 1)).getChunkMessage(this.configuration.getPeerId(), msg.getFileId(), msg.getChunkNo(), portData);
+        // byte[] chunkMsg = new MessageFactory(new ProtocolVersion(1, 1)).getChunkMessage(this.configuration.getPeerId(), msg.getFileId(), msg.getChunkNo(), portData);
         
         //this.configuration.getMDR().send(chunkMsg);
         //Logger.todo(this);
@@ -36,9 +36,9 @@ public class EnhancedRestoreStrategy extends RestoreStrategy {
         try {
             Socket clientSocket = socket.accept();  // waits for connection for 5 seconds
 
-            byte[] chunkData = new FileManager(configuration.getRootDir()).readChunk(msg.getFileId(), msg.getChunkNo());
+            // byte[] chunkData = new FileManager(configuration.getRootDir()).readChunk(msg.getFileId(), msg.getChunkNo());
 
-            clientSocket.getOutputStream().write(chunkData);
+            // clientSocket.getOutputStream().write(chunkData);
 
             clientSocket.close();
             socket.close();

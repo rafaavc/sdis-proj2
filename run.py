@@ -50,39 +50,44 @@ def compile_peers():
         print(out.stderr.decode("UTF-8"))
     return out.returncode == 0
 
-peersColors = [ '\033[31m', '\033[34m', '\033[36m', '\033[32m', '\033[35m', '\033[33m', '\033[37m' ]
+peersColors = [ '\033[33m', '\033[34m', '\033[36m', '\033[32m', '\033[35m', '\033[37m' ]
 
-class PrintPeerStdout(Thread):
-    def __init__(self, proc, lock):
+class PrintPeerOutput(Thread):
+    def __init__(self, proc, lock, stdout=True):
         Thread.__init__(self)
         self.running = True
         self.proc = proc
         self.lock = lock
+        self.stdout = stdout
 
     def run(self):
         time.sleep(.5)
         while self.running:
-            text = os.read(self.proc["pipeRFD"], 10240).decode("UTF-8")
+            text = os.read(self.proc["stdoutPipeRFD" if self.stdout else "stderrPipeRFD"], 10240).decode("UTF-8")
             if (len(text) != 0):
                 name = "peer" + str(self.proc["peerId"])
                 color = peersColors[self.proc["peerId"] % len(peersColors)]
 
                 self.lock.acquire() # so that they don"t interrupt each other
 
-                print(color, end="")
-                print(name + ": ", end="")
-                print('\033[39m', end="")
+                if (not self.stdout): print('\033[41m\033[1;37m', end="") # ansi color code for red background
+                else: print(color, end="")
+                print(name + ":", end="")
+                print('\033[0m', end="")
+                print(' ', end="")
 
                 lines = text.split("\n")
                 print(lines[0])
 
                 spacer = "-"
                 for _n in name: spacer += "-"
-                spacer += " "
 
                 for line in lines[1:]:
                     if line == "": continue
-                    print(color + spacer + '\033[39m', end="")
+                    if (not self.stdout): print('\033[41m\033[1;37m', end="")
+                    else: print(color, end="")
+                    print(spacer + '\033[0m', end="")
+                    print(' ', end="")
                     print(line)
                 
                 print()
@@ -125,24 +130,31 @@ lock = Lock()
 
 def start_peer(peerId, first=False, firstServerPort=-1):
     os.chdir("src/build")
-    r, w = os.pipe()
+    stdoutRead, stdoutWrite = os.pipe()
+    stderrRead, stderrWrite = os.pipe()
     newpid = os.fork()
     if newpid == 0:  # peer
-        os.close(r)
-        os.dup2(w, sys.stdout.fileno())  # stdout will be the pipe
+        os.close(stdoutRead)
+        os.close(stderrRead)
+        os.dup2(stdoutWrite, sys.stdout.fileno())  # stdout will be the pipe
+        os.dup2(stderrWrite, sys.stderr.fileno())  # stderr will be the pipe
         run_peer(peerId, first, firstServerPort)
     else:  # parent
-        os.close(w)
+        os.close(stdoutWrite)
+        os.close(stderrWrite)
         processes[peerId] = {
             "peerId": peerId,
             "pid": newpid,
-            "pipeRFD": r
+            "stdoutPipeRFD": stdoutRead,
+            "stderrPipeRFD": stderrRead
         }
     
-    thread = PrintPeerStdout(processes[peerId], lock)
-    thread.setDaemon(True)
-    processes[peerId]["thread"] = thread
-    thread.start()
+    thread1 = PrintPeerOutput(processes[peerId], lock)
+    thread2 = PrintPeerOutput(processes[peerId], lock, False)
+    processes[peerId]["threads"] = [ thread1, thread2 ]
+    for thread in processes[peerId]["threads"]:
+        thread.setDaemon(True)
+        thread.start()
 
     os.chdir("../..")
 
@@ -153,8 +165,10 @@ def stop_peer(peerId, deleteFromProcesses=False):
         del processes[peerId]
 
 def stop_peer_process(proc, wait=False):
-    proc["thread"].stop()
-    os.close(proc["pipeRFD"])
+    for thread in proc["threads"]:
+        thread.stop()
+    os.close(proc["stdoutPipeRFD"])
+    os.close(proc["stderrPipeRFD"])
     os.kill(proc["pid"], signal.SIGTERM)
     if wait: os.wait()
 

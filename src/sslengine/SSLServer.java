@@ -91,7 +91,7 @@ public class SSLServer extends SSLPeer {
             }
             byte[] bytes = new byte[this.peerAppData.remaining()];
             this.peerAppData.get(bytes);
-            router.handle(bytes, socket, engine);
+            router.handle(bytes, bytesRead, socket, engine);
         }
         else if(bytesRead < 0){
             Logger.debug(DebugType.SSL, "End of stream, going to close connection with client");

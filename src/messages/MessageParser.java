@@ -1,15 +1,18 @@
 package messages;
 
+import java.net.UnknownHostException;
 import java.util.Arrays;
 
 import configuration.ProtocolVersion;
 import exceptions.ArgsException;
 import exceptions.ArgsException.Type;
 import messages.Message.MessageType;
+import utils.IntParser;
+import utils.Logger;
 
 public class MessageParser {
 
-    public static Message parse(byte[] data, int length) throws ArgsException {
+    public static Message parse(byte[] data, int length) throws ArgsException, UnknownHostException {
         int bodyStart = -1, headerEnd = -1;
         for (int i = 0; i < data.length; i++) {
             byte b = data[i];
@@ -26,17 +29,13 @@ public class MessageParser {
 
         String[] headerPieces = header.split(" +"); // regex for spaces (works with multiple spaces)
 
-        String version = headerPieces[0], messageType = headerPieces[1], fileId = headerPieces[3];
+        String version = headerPieces[0], messageType = headerPieces[1];
 
-        int senderId;
-        try {
-            senderId = Integer.parseInt(headerPieces[2]);
-        } catch(NumberFormatException e) {
-            throw new ArgsException(Type.PEER_ID, headerPieces[2]);
-        }
+        int senderId = IntParser.parse(headerPieces[2]);
+        int fileKey = IntParser.parse(headerPieces[3]);
 
         MessageType type = getMessageType(messageType);
-        Message message = new Message(new ProtocolVersion(version), senderId, fileId);
+        Message message = new Message(new ProtocolVersion(version), senderId, fileKey);
 
         switch(type)
         {
@@ -83,7 +82,14 @@ public class MessageParser {
             case LOOKUP:
                 message.setMessageType(MessageType.LOOKUP);
                 break;
+
+            case LOOKUPRESPONSE:
+                message.setMessageType(MessageType.LOOKUPRESPONSE);
+                message.setNode(headerPieces[4], IntParser.parse(headerPieces[5]), IntParser.parse(headerPieces[6]));
+                break;
+
             default:
+                Logger.error("[MessageParser] Received a message that I don't know how to parse.");
                 break;
         }
 

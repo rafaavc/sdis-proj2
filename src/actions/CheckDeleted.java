@@ -19,9 +19,9 @@ public class CheckDeleted {
             client.connect();
             for (String fileId : configuration.getPeerState().getBackedUpFileIds())
             {
-                byte[] msg = new MessageFactory(new ProtocolVersion(1, 1)).getFilecheckMessage(configuration.getPeerId(), fileId);
-                client.write(msg);
-                client.read();
+                // byte[] msg = new MessageFactory(new ProtocolVersion(1, 1)).getFilecheckMessage(configuration.getPeerId(), fileId);
+                // client.write(msg);
+                // client.read();
                 //configuration.getMC().send(msg);
                 //Logger.todo(this);
 

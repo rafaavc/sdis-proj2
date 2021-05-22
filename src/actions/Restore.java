@@ -32,8 +32,8 @@ public class Restore {
 
             for (ChunkPair chunk : file.getChunks())
             {
-                byte[] msg = new MessageFactory(configuration.getProtocolVersion()).getGetchunkMessage(this.configuration.getPeerId(), file.getFileId(), chunk.getChunkNo());
-                chunksToGet.put(chunk, msg);
+                // byte[] msg = new MessageFactory(configuration.getProtocolVersion()).getGetchunkMessage(this.configuration.getPeerId(), file.getFileId(), chunk.getChunkNo());
+                // chunksToGet.put(chunk, msg);
             }
 
             for (ChunkPair chunk : chunksToGet.keySet()) {

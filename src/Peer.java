@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import configuration.ClientInterface;
 import configuration.PeerConfiguration;
 import files.FileManager;
+import messages.MessageFactory;
 import sslengine.SSLClient;
 import state.PeerState;
 import actions.Backup;
@@ -46,7 +47,8 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
             ChordNode successor = configuration.getChord().getSuccessor();
             SSLClient client = new SSLClient(successor.getInetAddress().getHostAddress(), successor.getPort());
             client.connect();
-            client.write(new FileManager().read("../../lorem.txt"));
+            //client.write(new FileManager().read("../../lorem.txt"));
+            client.write(new MessageFactory(configuration.getProtocolVersion()).getLookupMessage(configuration.getChord().getId(), 1234));
             client.read();
             client.shutdown();
         } catch (Exception e) {

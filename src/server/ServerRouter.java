@@ -36,6 +36,15 @@ public class ServerRouter implements Router {
                 byte[] response = messageFactory.getLookupResponseMessage(configuration.getPeerId(), message.getFileKey(), node).getBytes();
                 configuration.getServer().write(socket, engine, response);
                 break;
+            case GETPREDECESSOR:
+                Logger.todo(this);
+                break;
+            case NOTIFYPREDECESSOR:
+                Logger.todo(this);
+                break;
+            case CHECK:
+                Logger.todo(this);
+                break;
             default:
                 Logger.log("Received " + message.getMessageType());
                 break;

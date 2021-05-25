@@ -44,13 +44,15 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
     public void sendMessageToServer() throws RemoteException {
         try {
-            ChordNode successor = configuration.getChord().getSuccessor();
-            SSLClient client = new SSLClient(successor.getInetAddress().getHostAddress(), successor.getPort());
-            client.connect();
-            //client.write(new FileManager().read("../../lorem.txt"));
-            client.write(new MessageFactory(configuration.getProtocolVersion()).getLookupMessage(configuration.getChord().getId(), 1234));
-            client.read();
-            client.shutdown();
+            configuration.getChord().lookup(configuration.getChord().getSuccessor().getInetSocketAddress(), 10);
+            // SSLClient client = new SSLClient(successor.getInetAddress().getHostAddress(), successor.getPort());
+            // client.connect();
+            // //client.write(new FileManager().read("../../lorem.txt"));
+            // client.write(new MessageFactory(configuration.getProtocolVersion()).getLookupMessage(configuration.getChord().getId(), 1234));
+            // client.read((byte[] data, Integer amount) -> {
+            //     Logger.log("Received " + new String(data));
+            // });
+            // client.shutdown();
         } catch (Exception e) {
             Logger.error(e, true);
         }

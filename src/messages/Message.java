@@ -9,6 +9,7 @@ import java.util.List;
 
 import chord.ChordNode;
 import configuration.ProtocolVersion;
+import utils.Logger;
 
 public class Message {
     private final ProtocolVersion version;
@@ -57,6 +58,10 @@ public class Message {
         this.version = version;
         this.senderId = senderId;
         this.fileKey = fileKey;
+    }
+
+    public Message(ProtocolVersion version, int senderId) {
+        this(version, senderId, -1);
     }
 
     public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, ChordNode node) {
@@ -129,7 +134,8 @@ public class Message {
         return (float) (body.length / 1000.);
     }
 
-    public int getFileKey() {
+    public int getFileKey() throws Exception {
+        if (this.fileKey < 0) throw new Exception("Trying to access chunkNo of message without this field.");
         return fileKey;
     }
 

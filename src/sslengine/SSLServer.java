@@ -99,38 +99,6 @@ public class SSLServer extends SSLPeer {
         }
     }
 
-    @Override
-    public void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
-        Logger.debug(DebugType.SSL, "Going to write to the client...");
-
-        this.appData.clear();
-        this.appData.put(message);
-        this.appData.flip();
-        while(this.appData.hasRemaining()){
-            this.netData.clear();
-            SSLEngineResult result = engine.wrap(this.appData, this.netData);
-            switch (result.getStatus()){
-                case OK:
-                    this.netData.flip();
-                    while (this.netData.hasRemaining()){
-                        socket.write(this.netData);
-                    }
-                    Logger.debug(DebugType.SSL, "Sent to the client " + message);
-                    break;
-                case CLOSED:
-                    this.closeConnection(socket, engine);
-                    return;
-                case BUFFER_UNDERFLOW:
-                    throw new SSLException("Buffer underflow occurred after a wrap.");
-                case BUFFER_OVERFLOW:
-                    this.netData = this.increaseBufferSize(this.netData, engine.getSession().getPacketBufferSize());
-                    break;
-                default:
-                    throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
-            }
-        }
-    }
-
     public String getAddress() {
         return address;
     }

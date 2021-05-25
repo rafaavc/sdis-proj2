@@ -31,66 +31,71 @@ public class MessageParser {
 
         String version = headerPieces[0], messageType = headerPieces[1];
 
-        int senderId = IntParser.parse(headerPieces[2]);
-        int fileKey = IntParser.parse(headerPieces[3]);
-
         MessageType type = getMessageType(messageType);
-        Message message = new Message(new ProtocolVersion(version), senderId, fileKey);
 
-        switch(type)
+        int senderId = IntParser.parse(headerPieces[2]);
+        Message message;
+
+        try 
+        {  // try to find a fileKey
+            int fileKey = IntParser.parse(headerPieces[3]);
+            message = new Message(new ProtocolVersion(version), senderId, fileKey);
+            message.setMessageType(type);
+
+            switch(type)
+            {
+                case PUTCHUNK:
+                    message.setChunkNo(Integer.parseInt(headerPieces[4]));
+                    message.setReplicationDeg((short) Integer.parseInt(headerPieces[5]));
+
+                    byte[] body = Arrays.copyOfRange(data, bodyStart, length);
+                    message.setBody(body);
+                    break;
+
+                case STORED:
+                    message.setChunkNo(Integer.parseInt(headerPieces[4]));
+                    break;
+
+                case GETCHUNK:   
+                    message.setChunkNo(Integer.parseInt(headerPieces[4]));
+                    break;
+                
+                case CHUNK:
+                    message.setChunkNo(Integer.parseInt(headerPieces[4]));
+
+                    byte[] chunkBody = Arrays.copyOfRange(data, bodyStart, length);
+                    message.setBody(chunkBody);
+                    break;
+
+                case REMOVED:   
+                    message.setChunkNo(Integer.parseInt(headerPieces[4]));   
+                    break;
+
+                case LOOKUPRESPONSE:
+                    message.setNode(headerPieces[4], IntParser.parse(headerPieces[5]), IntParser.parse(headerPieces[6]));
+                    break;
+
+                case DELETE: case LOOKUP: case FILECHECK:
+                    break;
+
+                default:
+                    Logger.error("[MessageParser] Received a message with file key that I don't know how to parse.");
+                    break;
+            }
+        } 
+        catch (Exception e)  // if didn't find a file key
         {
-            case PUTCHUNK:
-                message.setMessageType(MessageType.PUTCHUNK);
-                message.setChunkNo(Integer.parseInt(headerPieces[4]));
-                message.setReplicationDeg((short) Integer.parseInt(headerPieces[5]));
-
-                byte[] body = Arrays.copyOfRange(data, bodyStart, length);
-                message.setBody(body);
-                break;
-
-            case STORED:
-                message.setMessageType(MessageType.STORED);  
-                message.setChunkNo(Integer.parseInt(headerPieces[4]));
-                break;
-
-            case GETCHUNK:
-                message.setMessageType(MessageType.GETCHUNK);     
-                message.setChunkNo(Integer.parseInt(headerPieces[4]));
-                break;
+            message = new Message(new ProtocolVersion(version), senderId);
+            message.setMessageType(type);
             
-            case CHUNK:
-                message.setMessageType(MessageType.CHUNK);
-                message.setChunkNo(Integer.parseInt(headerPieces[4]));
-
-                byte[] chunkBody = Arrays.copyOfRange(data, bodyStart, length);
-                message.setBody(chunkBody);
-                break;
-
-            case DELETE:
-                message.setMessageType(MessageType.DELETE); 
-                break;
-
-            case REMOVED:
-                message.setMessageType(MessageType.REMOVED);     
-                message.setChunkNo(Integer.parseInt(headerPieces[4]));   
-                break;
-
-            case FILECHECK:
-                message.setMessageType(MessageType.FILECHECK);
-                break;
-            
-            case LOOKUP:
-                message.setMessageType(MessageType.LOOKUP);
-                break;
-
-            case LOOKUPRESPONSE:
-                message.setMessageType(MessageType.LOOKUPRESPONSE);
-                message.setNode(headerPieces[4], IntParser.parse(headerPieces[5]), IntParser.parse(headerPieces[6]));
-                break;
-
-            default:
-                Logger.error("[MessageParser] Received a message that I don't know how to parse.");
-                break;
+            switch (type) {
+                case GETPREDECESSOR: case CHECK: case NOTIFYPREDECESSOR:
+                    break;
+                
+                default:
+                    Logger.error("[MessageParser] Received a message without file key that I don't know how to parse.");
+                    break;
+            }
         }
 
         return message;

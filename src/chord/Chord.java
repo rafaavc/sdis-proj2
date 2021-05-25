@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import configuration.PeerConfiguration;
 import messages.Message;
@@ -27,6 +28,7 @@ public class Chord {
     private final int m;
     private final MessageFactory messageFactory;
     private ChordNode predecessor;
+    private int nextFingerToFix = -1;
 
     /**
      * Instantiates the chord algorithm for this peer, making him join the P2P network
@@ -47,6 +49,22 @@ public class Chord {
 
         if (preexistingNode == null) this.create();
         else this.join(preexistingNode);
+
+        configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
+            try {
+                updateFingers();
+            } catch(Exception e) {
+                Logger.error(e, true);
+            }
+        }, 50, 200, TimeUnit.MILLISECONDS);
+        // configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
+        //     try {
+        //         stabilize();
+        //     } catch(Exception e) {
+        //         Logger.error(e, true);
+        //     }
+        // }, 500, 300, TimeUnit.MILLISECONDS);
+        configuration.getThreadScheduler().scheduleWithFixedDelay(() -> printFingerTable(), 0, 10, TimeUnit.SECONDS);
     }
 
     public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress) throws Exception {
@@ -99,7 +117,11 @@ public class Chord {
         // send LOOKUP message to the preexisting node
         // and set the successor to the value of the return
         //ChordNode successor = this.lookup(preexistingNode, self.getId());  // TODO change to the value returned by the LOOKUP message
-        this.fingerTable.add(new ChordNode(preexistingNode, 10));  // TODO change to the successor returned by lookup
+        this.fingerTable.add(new ChordNode(preexistingNode, generateNodeId(preexistingNode)));  // TODO change to the successor returned by lookup
+    }
+
+    public int getFingerTableIndexId(int idx) {
+        return getId() + (int) Math.pow(2, idx);
     }
 
     /**
@@ -107,14 +129,26 @@ public class Chord {
      * @throws Exception
      */
     public void updateFingers() throws Exception {
-        for (int finger = 0; finger < this.m - 1; finger++) {
-            ChordNode fingerValue = lookup(self.getId() + (int) Math.pow(2, finger)).get();
-            if (fingerTable.get(finger) != null) {
-                fingerTable.set(finger, fingerValue);
-            } else if (fingerTable.get(finger - 1) != null) { // if it's filled up to this point
+        nextFingerToFix = nextFingerToFix + 1;
+        if (nextFingerToFix > this.m - 1) nextFingerToFix = 0;
+
+        ChordNode fingerValue = lookup(getFingerTableIndexId(nextFingerToFix)).get();
+        try 
+        {
+            fingerTable.get(nextFingerToFix);  // if already exists
+            fingerTable.set(nextFingerToFix, fingerValue);
+        } 
+        catch (IndexOutOfBoundsException e) 
+        {
+            try 
+            {
+                fingerTable.get(nextFingerToFix - 1); // if it's filled up to this point
                 fingerTable.add(fingerValue);
-            } else {
-                Logger.error("updateFingers: finger table was not valid.");
+            } 
+            catch (IndexOutOfBoundsException e1) 
+            {
+                nextFingerToFix--; // To try to fix this one again
+                throw new Exception("updateFingers: finger table was not valid.");
             }
         }
     }
@@ -125,10 +159,15 @@ public class Chord {
      */
     public void stabilize() throws Exception {
         ChordNode successor = fingerTable.get(0);
+
+        if (successor.getId() == getId()) return;
         
         SSLClient client = new SSLClient(successor.getInetSocketAddress().getHostName(), successor.getPort());
+        client.connect();
         client.write(messageFactory.getPredecessorMessage(self.getId()));
-        client.read();
+        client.read((byte[] data, Integer length) -> {
+            Logger.log("Received " + new String(data));
+        });
         
         int sucPredId = client.getPeerAppData().getInt();
 
@@ -157,6 +196,7 @@ public class Chord {
     */
     public void notifyPredecessor(ChordNode successor) throws Exception {
         SSLClient client = new SSLClient(successor.getInetSocketAddress().getHostName(), successor.getPort());
+        client.connect();
         client.write(messageFactory.getNotifyPredecessorMessage(self.getId()));
         client.shutdown();
     }
@@ -190,19 +230,28 @@ public class Chord {
     public Future<ChordNode> lookup(int k) throws Exception {
         
         // this is important because the successor is the only node whose position the current node knows with certainty
-        if (fingerTable.size() == 1 || k > self.getId() && k <= fingerTable.get(0).getId()) {
+
+        if (fingerTable.size() == 1 || k > self.getId() && k <= fingerTable.get(0).getId()) 
+        {
             CompletableFuture<ChordNode> future = new CompletableFuture<>();
             future.complete(fingerTable.get(0));
             return future;
-        }
-        
+        } 
+
         ChordNode closestPreceding = this.closestPrecedingNode(k);
+        if (closestPreceding.getId() == getId())
+        {
+            CompletableFuture<ChordNode> future = new CompletableFuture<>();
+            future.complete(self);
+            return future;
+        }
 
         return lookup(closestPreceding.getInetSocketAddress(), k);
     }
 
-    private Future<ChordNode> lookup(InetSocketAddress peerAddress, int k) throws Exception {
-        SSLClient client = new SSLClient(peerAddress.getHostString(), peerAddress.getPort());
+    public Future<ChordNode> lookup(InetSocketAddress peerAddress, int k) throws Exception {
+        SSLClient client = new SSLClient(peerAddress.getAddress().getHostAddress(), peerAddress.getPort());
+        client.connect();
         client.write(messageFactory.getLookupMessage(self.getId(), k));
 
         Logger.debug(DebugType.CHORD, "Sending LOOKUP of key " + k + " to " + peerAddress.toString());
@@ -215,13 +264,26 @@ public class Chord {
                 Message message = MessageParser.parse(data, length);
                 Logger.log("Received: " + new String(data));
                 future.complete(message.getNode());
-
             } catch (Exception e) {
                 Logger.error(e, true);
+                future.cancel(true);
             }
         });
+        client.shutdown();
 
         return future;
+    }
+
+    public void printFingerTable() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("\n----------------------------------------------\n");
+        builder.append("%% Finger table of node " + getId() + " %%\n");
+        for (int i = 0; i < fingerTable.size(); i++) {
+            ChordNode node = fingerTable.get(i);
+            builder.append(getFingerTableIndexId(i) + ": " + node.getId() + " | " + node.getInetSocketAddress().toString() + "\n");
+        }
+        builder.append("----------------------------------------------\n\n");
+        Logger.log(builder.toString());
     }
 }
 

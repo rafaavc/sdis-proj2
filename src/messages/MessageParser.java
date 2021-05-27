@@ -9,6 +9,7 @@ import exceptions.ArgsException.Type;
 import messages.Message.MessageType;
 import utils.IntParser;
 import utils.Logger;
+import utils.Logger.DebugType;
 
 public class MessageParser {
 
@@ -25,6 +26,8 @@ public class MessageParser {
             }
         }
 
+        Logger.debug(DebugType.MESSAGE, "Parsing message: " + new String(data).trim());
+
         String header = new String(Arrays.copyOf(data, headerEnd + 1));
 
         String[] headerPieces = header.split(" +"); // regex for spaces (works with multiple spaces)
@@ -36,8 +39,7 @@ public class MessageParser {
         int senderId = IntParser.parse(headerPieces[2]);
         Message message;
 
-        try 
-        {  // try to find a fileKey
+        if (needsFileKey(type)) {
             int fileKey = IntParser.parse(headerPieces[3]);
             message = new Message(new ProtocolVersion(version), senderId, fileKey);
             message.setMessageType(type);
@@ -83,13 +85,17 @@ public class MessageParser {
                     break;
             }
         } 
-        catch (Exception e)  // if didn't find a file key
+        else
         {
             message = new Message(new ProtocolVersion(version), senderId);
             message.setMessageType(type);
             
             switch (type) {
-                case GETPREDECESSOR: case CHECK: case NOTIFYPREDECESSOR:
+                case GETPREDECESSOR: break;
+
+                case NOTIFY: case PREDECESSOR:
+                    if (type == MessageType.PREDECESSOR && headerPieces.length < 6) break;  // the successor doesn't have a predecessor
+                    message.setNode(headerPieces[3], IntParser.parse(headerPieces[4]), IntParser.parse(headerPieces[5]));
                     break;
                 
                 default:
@@ -99,6 +105,11 @@ public class MessageParser {
         }
 
         return message;
+    }
+
+    public static boolean needsFileKey(MessageType type) {
+        return type == MessageType.CHUNK || type == MessageType.DELETE || type == MessageType.REMOVED 
+            || type == MessageType.PUTCHUNK || type == MessageType.STORED || type == MessageType.LOOKUP || type == MessageType.FILECHECK || type == MessageType.GETCHUNK || type == MessageType.LOOKUPRESPONSE;
     }
 
     public static MessageType getMessageType(String type) throws ArgsException {

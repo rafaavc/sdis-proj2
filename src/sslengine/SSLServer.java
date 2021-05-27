@@ -107,7 +107,7 @@ public class SSLServer extends SSLPeer {
         return port;
     }
 
-    public void start() throws Exception {
+    public void start() throws IOException {
 
         Logger.debug(DebugType.SSL, "Server ready!");
 
@@ -117,13 +117,17 @@ public class SSLServer extends SSLPeer {
             while(selectedKeys.hasNext()){
                 SelectionKey key = selectedKeys.next();
                 selectedKeys.remove();
-                if(!key.isValid())
-                    continue;
-                if(key.isAcceptable())
-                    this.accept(key);
-                else if(key.isReadable())
-                    // submit a thread to the executor?
-                    this.read((SocketChannel) key.channel(), (SSLEngine) key.attachment());
+                try {
+                    if(!key.isValid())
+                        continue;
+                    if(key.isAcceptable())
+                        this.accept(key);
+                    else if(key.isReadable())
+                        // submit a thread to the executor?
+                        this.read((SocketChannel) key.channel(), (SSLEngine) key.attachment());
+                } catch (Exception e) {
+                    Logger.error(e, true);
+                }
             }
         }
 

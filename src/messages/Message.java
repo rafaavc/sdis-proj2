@@ -9,11 +9,11 @@ import java.util.List;
 
 import chord.ChordNode;
 import configuration.ProtocolVersion;
-import utils.Logger;
 
 public class Message {
     private final ProtocolVersion version;
-    private final int senderId, fileKey;
+    private final int senderId;
+    private final Integer fileKey;
     private ChordNode node = null;
     private MessageType messageType;
     private int chunkNo = -1;
@@ -32,8 +32,8 @@ public class Message {
         LOOKUP,
         LOOKUPRESPONSE,
         GETPREDECESSOR,
-        NOTIFYPREDECESSOR,
-        CHECK
+        PREDECESSOR,
+        NOTIFY
     }
 
     private static final String CRLF = new String(new byte[] { 0xD, 0xA });
@@ -50,22 +50,28 @@ public class Message {
         messageTypeStrings.put(MessageType.LOOKUP, "LOOKUP");
         messageTypeStrings.put(MessageType.LOOKUPRESPONSE, "LOOKUPRESPONSE");
         messageTypeStrings.put(MessageType.GETPREDECESSOR, "GETPREDECESSOR");
-        messageTypeStrings.put(MessageType.NOTIFYPREDECESSOR, "NOTIFYPREDECESSOR");
-        messageTypeStrings.put(MessageType.CHECK, "CHECK");
+        messageTypeStrings.put(MessageType.PREDECESSOR, "PREDECESSOR");
+        messageTypeStrings.put(MessageType.NOTIFY, "NOTIFY");
     }
 
-    public Message(ProtocolVersion version, int senderId, int fileKey) {
+    public Message(ProtocolVersion version, int senderId, Integer fileKey) {
         this.version = version;
         this.senderId = senderId;
         this.fileKey = fileKey;
     }
 
     public Message(ProtocolVersion version, int senderId) {
-        this(version, senderId, -1);
+        this(version, senderId, null);
     }
 
     public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, ChordNode node) {
         this(version, senderId, fileKey);
+        this.messageType = messageType;
+        this.node = node;
+    }
+
+    public Message(ProtocolVersion version, MessageType messageType, int senderId, ChordNode node) {
+        this(version, senderId);
         this.messageType = messageType;
         this.node = node;
     }
@@ -135,7 +141,7 @@ public class Message {
     }
 
     public int getFileKey() throws Exception {
-        if (this.fileKey < 0) throw new Exception("Trying to access chunkNo of message without this field.");
+        if (this.fileKey == null) throw new Exception("Trying to access fileKey of message without this field.");
         return fileKey;
     }
 
@@ -186,13 +192,15 @@ public class Message {
         components.add(version.toString());
         components.add(messageTypeStrings.get(messageType));
         components.add(String.valueOf(senderId));
-        if (fileKey != -1) components.add(String.valueOf(fileKey));
+        if (fileKey != null) components.add(String.valueOf(fileKey));
         if (chunkNo != -1) components.add(String.valueOf(chunkNo));
         if (replicationDeg != -1) components.add(String.valueOf(replicationDeg));
         if (node != null) {
             components.add(node.getInetAddress().getHostAddress());
             components.add(String.valueOf(node.getPort()));
             components.add(String.valueOf(node.getId()));
+        } else if (messageType == MessageType.PREDECESSOR) {
+            components.add("NULL");
         }
         return components;
     }

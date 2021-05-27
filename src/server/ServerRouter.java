@@ -27,27 +27,38 @@ public class ServerRouter implements Router {
         Message message = MessageParser.parse(dataReceived, length);
         Logger.debug(message, socket.getRemoteAddress().toString());
 
+        byte[] response = null;
+
         switch(message.getMessageType()) {
             case LOOKUP:
                 Logger.debug(DebugType.CHORD, "Received LOOKUP of key " + message.getFileKey());
                 ChordNode node = configuration.getChord().lookup(message.getFileKey()).get();
                 Logger.debug(DebugType.CHORD, "Replying with " + node.toString());
 
-                byte[] response = messageFactory.getLookupResponseMessage(configuration.getPeerId(), message.getFileKey(), node).getBytes();
-                configuration.getServer().write(socket, engine, response);
+                response = messageFactory.getLookupResponseMessage(configuration.getPeerId(), message.getFileKey(), node).getBytes();
                 break;
+
             case GETPREDECESSOR:
-                Logger.todo(this);
+                Logger.debug(DebugType.CHORD, "Received GETPREDECESSOR");
+                ChordNode predecessorNode = configuration.getChord().getPredecessor();
+                Logger.debug(DebugType.CHORD, "Replying with " + predecessorNode);
+
+                response = messageFactory.getPredecessorMessage(configuration.getPeerId(), predecessorNode).getBytes();
                 break;
-            case NOTIFYPREDECESSOR:
-                Logger.todo(this);
+
+            case NOTIFY:
+                Logger.debug(DebugType.CHORD, "Received NOTIFY");
+                configuration.getChord().notify(message.getNode());
                 break;
-            case CHECK:
-                Logger.todo(this);
-                break;
+
             default:
                 Logger.log("Received " + message.getMessageType());
                 break;
+        }
+
+        if (response != null) {
+            Logger.debug(DebugType.MESSAGE, "Sending response to client: '" + new String(response).trim() + "'");
+            configuration.getServer().write(socket, engine, response);
         }
     }
 }

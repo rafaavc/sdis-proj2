@@ -53,9 +53,9 @@ public class PeerConfiguration {
         this.threadScheduler.submit(new ServerThread(this.server));
 
         if (preexistingNode != null)
-            this.chord = new Chord(this, new InetSocketAddress(InetAddress.getLocalHost(), serverPort), preexistingNode);
+            this.chord = new Chord(this, new InetSocketAddress(ip, serverPort), preexistingNode);
         else 
-            this.chord = new Chord(this, new InetSocketAddress(InetAddress.getLocalHost(), serverPort));
+            this.chord = new Chord(this, new InetSocketAddress(ip, serverPort));
 
         Logger.log("My IP is " + ip + "\nMy Chord ring id is " + this.chord.getId());
     }

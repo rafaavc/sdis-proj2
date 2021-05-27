@@ -73,9 +73,10 @@ public class SSLClient extends SSLPeer{
                     }
                 }
 
+                
                 byte[] bytes = new byte[this.peerAppData.remaining()];
                 this.peerAppData.get(bytes);
-                Logger.debug(DebugType.SSL, "[DEFAULT CLIENT READER] Received from server:\n" + new String(bytes));
+                Logger.debug(DebugType.SSL, "[DEFAULT CLIENT READER] Received from server (bytesRead = " + bytesRead + ", remaining = " + this.peerAppData.remaining() + "):\n" + new String(bytes));
                 if (consumer != null) consumer.accept(bytes, bytesRead);
             }
             else if(bytesRead < 0){

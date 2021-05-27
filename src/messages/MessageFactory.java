@@ -23,16 +23,16 @@ public class MessageFactory {
         return new Message(version, MessageType.LOOKUPRESPONSE, senderId, fileKey, node);
     }
 
-    public Message getPredecessorMessage(int senderId) {
+    public Message getGetPredecessorMessage(int senderId) {
         return new Message(version, MessageType.GETPREDECESSOR, senderId);
     }
 
-    public Message getNotifyPredecessorMessage(int senderId) {
-        return new Message(version, MessageType.NOTIFYPREDECESSOR, senderId);
+    public Message getPredecessorMessage(int senderId, ChordNode node) {
+        return new Message(version, MessageType.PREDECESSOR, senderId, node);
     }
 
-    public Message getCheckMessage(int senderId) {
-        return new Message(version, MessageType.CHECK, senderId);
+    public Message getNotifyMessage(int senderId, ChordNode node) {
+        return new Message(version, MessageType.NOTIFY, senderId, node);
     }
 
     public byte[] getPutchunkMessage(int senderId, int fileKey, int replicationDeg, int chunkNo, byte[] body) throws ArgsException {

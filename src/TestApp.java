@@ -70,7 +70,11 @@ public class TestApp {
                     Logger.log(stub.getPeerState().toString());
                     break;
                 case "SSL": case "SEND_MESSAGE":
-                    stub.sendMessageToServer();
+                    if (args.length < 3) {
+                        Logger.error("To send message I need the number of threads.");
+                        System.exit(1);
+                    }
+                    stub.sendMessageToServer(Integer.parseInt(args[2]));
                     break;
                 default:
                     Logger.error("The operation '" + args[1] + "' doesn't exist.");

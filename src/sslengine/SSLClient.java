@@ -6,12 +6,12 @@ import utils.Logger.DebugType;
 import javax.net.ssl.*;
 
 import messages.Message;
+import messages.MessageParser;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.security.SecureRandom;
 import java.util.function.BiConsumer;
 
 public class SSLClient extends SSLPeer{
@@ -20,6 +20,14 @@ public class SSLClient extends SSLPeer{
     private int port;
     private SSLEngine engine;
     private SocketChannel socket;
+
+    public SSLEngine getEngine() {
+        return engine;
+    }
+
+    public SocketChannel getSocket() {
+        return socket;
+    }
 
     public SSLClient(String address, int port) throws Exception {
         this("TLS", address, port);
@@ -30,74 +38,25 @@ public class SSLClient extends SSLPeer{
         this.port = port;
 
         SSLContext context = SSLContext.getInstance(protocol);
-        context.init(createKeyManagers("../sslengine/keys/client.jks", "123456", "123456"), createTrustManagers("../sslengine/keys/truststore.jks", "123456"), new SecureRandom());
+        initContext(context);
+
         this.engine = context.createSSLEngine(address, port);
         this.engine.setUseClientMode(true);
-
-        SSLSession session = this.engine.getSession();
-        this.appData = ByteBuffer.allocate(64000);  //might need to change
-        this.netData = ByteBuffer.allocate(session.getPacketBufferSize());
-        this.peerAppData = ByteBuffer.allocate(64000);  //might need to change
-        this.peerNetData = ByteBuffer.allocate(session.getPacketBufferSize());
-    }
-
-
-    protected void read(SocketChannel socket, SSLEngine engine, BiConsumer<byte[], Integer> consumer) throws Exception {
-        Logger.debug(DebugType.SSL, "Going to read from the server...");
-
-        this.peerNetData.clear();
-        boolean read = true;
-        while(read){
-            int bytesRead = this.socket.read(this.peerNetData);
-            if(bytesRead > 0){
-                this.peerNetData.flip();
-                while(this.peerNetData.hasRemaining()){
-                    this.peerAppData.clear();
-                    SSLEngineResult result = engine.unwrap(this.peerNetData, this.peerAppData);
-                    switch (result.getStatus()){
-                        case OK:
-                            this.peerAppData.flip();
-                            read = false;
-                            break;
-                        case CLOSED:
-                            this.closeConnection(socket, engine);
-                            return;
-                        case BUFFER_UNDERFLOW:
-                            this.peerNetData = this.processBufferUnderflow(engine,this.peerNetData);
-                            break;
-                        case BUFFER_OVERFLOW:
-                            this.peerAppData = this.increaseBufferSize(this.peerAppData, engine.getSession().getApplicationBufferSize());
-                            break;
-                        default:
-                            throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
-                    }
-                }
-
-                
-                byte[] bytes = new byte[this.peerAppData.remaining()];
-                this.peerAppData.get(bytes);
-                Logger.debug(DebugType.SSL, "[DEFAULT CLIENT READER] Received from server (bytesRead = " + bytesRead + ", remaining = " + this.peerAppData.remaining() + "):\n" + new String(bytes));
-                if (consumer != null) consumer.accept(bytes, bytesRead);
-            }
-            else if(bytesRead < 0){
-                this.processEndOfStream(socket, engine);
-                return;
-            }
-            Thread.sleep(150);
-        }
     }
 
     public boolean connect() throws IOException{
-        boolean loop;
-        this.socket = SocketChannel.open();
-        this.socket.configureBlocking(false);
-        this.socket.connect(new InetSocketAddress(this.address, this.port));
-        loop = this.socket.finishConnect();
-        while(!loop){
-            loop = this.socket.finishConnect();
+        synchronized(writeLock) 
+        {
+            this.socket = SocketChannel.open();
+            this.socket.configureBlocking(false);
+            this.socket.connect(new InetSocketAddress(this.address, this.port));
+
+            boolean loop = this.socket.finishConnect();
+            while (!loop) loop = this.socket.finishConnect();
+
+            this.engine.beginHandshake();
+            return this.executeHandshake(socket, this.engine);
         }
-        this.engine.beginHandshake();
-        return this.executeHandshake(socket, this.engine);
     }
 
     public void write(Message message) throws Exception {
@@ -108,13 +67,42 @@ public class SSLClient extends SSLPeer{
         write(this.socket, this.engine, message);
     }
 
+    public Message sendAndReadReply(Message message) throws Exception {
+        return sendAndReadReply(message, true);
+    }
+
+    public Message sendAndReadReply(Message message, boolean parseMessage) throws Exception {
+        int total = 0;
+        while (total < 5) {
+            total++;
+            write(message);
+
+            int count = 0;
+            while (true) {
+                try {
+                    ReadResult data = read(this.socket, this.engine);
+                    if (parseMessage) return MessageParser.parse(data.getData().array(), data.getBytesRead());
+                    else if (data.getBytesRead() <= 0) throw new Exception();
+                    else return null;
+                } catch (Exception e) {
+                    count++;
+                    if (count > 4) break; // couldn't read reply
+                    Thread.sleep(count * 250);
+                }
+            }
+        }
+        if (parseMessage) throw new Exception("Couldn't get a reply to message: " + message.toString().trim());
+        return null;
+    }
+
 
     public void read() throws Exception {
         read(null);
     }
 
     public void read(BiConsumer<byte[], Integer> consumer) throws Exception {
-        read(this.socket, this.engine, consumer);
+        ReadResult msg = read(this.socket, this.engine);
+        if (consumer != null) consumer.accept(msg.getData().array(), msg.getBytesRead());
     }
 
     public void shutdown() throws IOException {

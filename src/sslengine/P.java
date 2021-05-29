@@ -76,7 +76,7 @@ public class P implements ClientInterface {
     }
 
     @Override
-    public void sendMessageToServer() throws RemoteException {
+    public void sendMessageToServer(int n) throws RemoteException {
         try {
             this.client = new SSLClient("TLS", "localhost", 8081);
             this.client.connect();

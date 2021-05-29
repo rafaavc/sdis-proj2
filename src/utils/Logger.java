@@ -30,6 +30,13 @@ public class Logger {
             thrown.printStackTrace();
         }
     }
+    
+    public static void error(String doing, Throwable thrown, boolean showStackTrace) {
+        System.err.println("WAS THROWN while " + doing + ": " + thrown.getMessage());
+        if (showStackTrace) {
+            thrown.printStackTrace();
+        }
+    }
 
     public static void error(Throwable thrown, CompletableFuture<Result> future) {
         System.err.println("WAS THROWN: " + thrown.getMessage());

@@ -4,10 +4,14 @@ import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.function.Consumer;
 
 import configuration.ClientInterface;
 import configuration.PeerConfiguration;
 import files.FileManager;
+import messages.Message;
 import messages.MessageFactory;
 import sslengine.SSLClient;
 import state.PeerState;
@@ -42,17 +46,34 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
     /* RMI interface */
 
-    public void sendMessageToServer() throws RemoteException {
+    public void sendMessageToServer(int n) throws RemoteException {
         try {
-            configuration.getChord().lookup(configuration.getChord().getSuccessor().getInetSocketAddress(), 10);
-            // SSLClient client = new SSLClient(successor.getInetAddress().getHostAddress(), successor.getPort());
-            // client.connect();
-            // //client.write(new FileManager().read("../../lorem.txt"));
-            // client.write(new MessageFactory(configuration.getProtocolVersion()).getLookupMessage(configuration.getChord().getId(), 1234));
-            // client.read((byte[] data, Integer amount) -> {
-            //     Logger.log("Received " + new String(data));
-            // });
-            // client.shutdown();
+            // configuration.getChord().lookup(configuration.getChord().getSuccessor().getInetSocketAddress(), 10);
+
+            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(50);
+
+            Consumer<Integer> send = (Integer i) -> {
+                try {
+
+                    SSLClient client = new SSLClient(configuration.getChord().getSuccessor().getInetAddress().getHostAddress(), configuration.getChord().getSuccessor().getPort());
+                    client.connect();
+                    //client.write(new FileManager().read("../../lorem.txt"));
+                    Message message = client.sendAndReadReply(new MessageFactory(configuration.getProtocolVersion()).getLookupMessage(configuration.getChord().getId(), i));
+                    Logger.log(message.toString());
+                    client.shutdown();
+
+                } catch(Exception e) {
+                    Logger.error(e, true);
+                }
+            };
+
+            for (int i = 0; i < n; i++) {
+                int j = i;
+                executor.execute(() -> send.accept(j+1));
+                
+                // Thread.sleep(50 + (int) (Math.random() * 50));
+            }
+            
         } catch (Exception e) {
             Logger.error(e, true);
         }

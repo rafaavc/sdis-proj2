@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import configuration.PeerConfiguration;
 import messages.Message;
 import messages.MessageFactory;
-import messages.MessageParser;
 import sslengine.SSLClient;
 
 import java.lang.Math;
@@ -40,6 +39,9 @@ public class Chord {
      */
     public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress, InetSocketAddress preexistingNode) throws Exception {
         int id = -1;        
+
+        boolean turnoff = true;
+
         /*if (preexistingNode == null)*/ id = this.generateNodeId(peerAddress);
         //else id = this.getCollisionFreeId(peerAddress, preexistingNode);
 
@@ -49,30 +51,35 @@ public class Chord {
         this.messageFactory = new MessageFactory(configuration.getProtocolVersion());
 
         if (preexistingNode == null) this.create();
-        else this.join(preexistingNode);
-
-        configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
-            try {
-                updateFingers();
-            } catch(Exception e) {
-                Logger.error(e, true);
-            }
-        }, 50, 200, TimeUnit.MILLISECONDS);
-        configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
-            try {
-                stabilize();
-            } catch(Exception e) {
-                Logger.error(e, true);
-            }
-        }, 500, 300, TimeUnit.MILLISECONDS);
-        // configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
-        //     try {
-        //         checkPredecessor();
-        //     } catch(Exception e) {
-        //         Logger.error(e, true);
-        //     }
-        // }, 500, 300, TimeUnit.MILLISECONDS);
-        configuration.getThreadScheduler().scheduleWithFixedDelay(() -> printFingerTable(), 0, 10, TimeUnit.SECONDS);
+        else {
+            if (turnoff) this.successor = new ChordNode(preexistingNode, 111);
+            else this.join(preexistingNode);
+        }
+        
+        if (!turnoff) {
+            configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
+                try {
+                    updateFingers();
+                } catch(Exception e) {
+                    Logger.error(e, true);
+                }
+            }, configuration.getRandomDelay(1000, 100), 500, TimeUnit.MILLISECONDS);
+            configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
+                try {
+                    stabilize();
+                } catch(Exception e) {
+                    Logger.error(e, true);
+                }
+            }, configuration.getRandomDelay(1000, 100), 500, TimeUnit.MILLISECONDS);
+            // configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
+            //     try {
+            //         checkPredecessor();
+            //     } catch(Exception e) {
+            //         Logger.error(e, true);
+            //     }
+            // }, 500, 300, TimeUnit.MILLISECONDS);
+            configuration.getThreadScheduler().scheduleWithFixedDelay(() -> printFingerTable(), 0, 10, TimeUnit.SECONDS);
+        }
     }
 
     public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress) throws Exception {
@@ -206,20 +213,17 @@ public class Chord {
         
         SSLClient client = new SSLClient(successor.getInetAddress().getHostAddress(), successor.getPort());
         client.connect();
-        client.write(messageFactory.getGetPredecessorMessage(self.getId()));
-        client.read((byte[] data, Integer length) -> {
-            Logger.debug(DebugType.MESSAGE, "Received " + new String(data).trim());
-            try 
-            {
-                Message message = MessageParser.parse(data, length);
-                ChordNode predecessorOfSuccessor = message.getNode();  // if it has no predecessor it will throw exception
-                
-                if (isBetween(predecessorOfSuccessor, self, successor, false)) {
-                    successor = predecessorOfSuccessor;
-                }
-            } 
-            catch (Exception e) {}
-        });
+
+        Message reply = client.sendAndReadReply(messageFactory.getGetPredecessorMessage(self.getId()));
+
+        try {
+            ChordNode predecessorOfSuccessor = reply.getNode();  // if it has no predecessor it will throw exception
+            
+            if (isBetween(predecessorOfSuccessor, self, successor, false)) {
+                successor = predecessorOfSuccessor;
+            }
+        } catch (Exception e) {}
+
         client.shutdown();
 
         notifyPredecessor(successor);
@@ -230,12 +234,11 @@ public class Chord {
      * @param successor the node's successor
     */
     public void notifyPredecessor(ChordNode successor) throws Exception {
-        Logger.debug(DebugType.CHORD, "Notifying successor...");
+        Logger.debug(DebugType.CHORD, "Notifying successor " + successor);
 
         SSLClient client = new SSLClient(successor.getInetAddress().getHostAddress(), successor.getPort());
         client.connect();
-        client.write(messageFactory.getNotifyMessage(self.getId(), self));
-        client.read();
+        client.sendAndReadReply(messageFactory.getNotifyMessage(self.getId(), self), false);
         client.shutdown();
     }
 
@@ -323,20 +326,11 @@ public class Chord {
         CompletableFuture<ChordNode> future = new CompletableFuture<>();
 
         while (!future.isDone()) {
-            client.write(messageFactory.getLookupMessage(self.getId(), k));
-
             Logger.debug(DebugType.CHORD, "Sending LOOKUP of key " + k + " to " + peerAddress.toString());
             
-            client.read((byte[] data, Integer length) -> {
-                // TODO do this in a better way
-                try {
-                    Message message = MessageParser.parse(data, length);
-                    Logger.log("Received: " + new String(data));
-                    future.complete(message.getNode());
-                } catch (Exception e) {
-                    Logger.error("Couldn't parse received message! ('" + new String(data) + "')");
-                }
-            });
+            Message reply = client.sendAndReadReply(messageFactory.getLookupMessage(self.getId(), k));
+            
+            future.complete(reply.getNode());
         }
 
         client.shutdown();

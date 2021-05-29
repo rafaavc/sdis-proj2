@@ -8,7 +8,7 @@ import state.PeerState;
 
 public interface ClientInterface extends Remote {
     public void hi() throws RemoteException;
-    public void sendMessageToServer() throws RemoteException;
+    public void sendMessageToServer(int n) throws RemoteException;
     public PeerState getPeerState() throws RemoteException;
     public Result backup(String filePath, int replicationDegree) throws RemoteException;
     public Result restore(String fileName) throws RemoteException;

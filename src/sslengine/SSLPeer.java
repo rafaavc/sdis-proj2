@@ -10,90 +10,153 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public abstract class SSLPeer {
 
-    //peer's application data
-    protected ByteBuffer appData;
-
-    //peer's encrypted data
-    protected ByteBuffer netData;
-
-    //other peer's application data
-    protected ByteBuffer peerAppData;
-
-    //other peer's encrypted data
-    protected  ByteBuffer peerNetData;
-
+    /* Executor for handshake tasks */
     protected ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    protected static Object writeLock = new Object();  // TODO change this so that it is different for each destination (only need to keep things asynchronous when they go to the same distination)
+
+    protected void initContext(SSLContext context) throws Exception {
+        context.init(createKeyManagers("../sslengine/keys/client.jks", "123456", "123456"), 
+            createTrustManagers("../sslengine/keys/truststore.jks", "123456"), 
+            new SecureRandom());
+    }
     
     public void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
         Logger.debug(DebugType.SSL, "Going to write to the client...");
 
-        this.appData.clear();
-        this.appData.put(message);
-        this.appData.flip();
-        while(this.appData.hasRemaining()){
-            this.netData.clear();
-            SSLEngineResult result = engine.wrap(this.appData, this.netData);
-            switch (result.getStatus()){
-                case OK:
-                    this.netData.flip();
-                    while (this.netData.hasRemaining()){
-                        socket.write(this.netData);
-                    }
-                    Logger.debug(DebugType.SSL, "Sent to the client " + message);
-                    break;
-                case CLOSED:
-                    this.closeConnection(socket, engine);
-                    return;
-                case BUFFER_UNDERFLOW:
-                    throw new SSLException("Buffer underflow occurred after a wrap.");
-                case BUFFER_OVERFLOW:
-                    this.netData = this.increaseBufferSize(this.netData, engine.getSession().getPacketBufferSize());
-                    break;
-                default:
-                    throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
+        ByteBuffer appData = ByteBuffer.wrap(message);
+        ByteBuffer netData = ByteBuffer.allocate(engine.getSession().getPacketBufferSize());
+
+        while (appData.hasRemaining()) {
+            netData.clear();
+            synchronized(writeLock) {
+                SSLEngineResult result = engine.wrap(appData, netData);
+
+                switch (result.getStatus()) {
+                    case OK:
+                        netData.flip();
+
+                        while (netData.hasRemaining())
+                            socket.write(netData);
+
+                        Logger.debug(DebugType.SSL, "Sent to the client " + new String(message));
+                        
+                        break;
+
+                    case CLOSED:
+                        this.closeConnection(socket, engine);
+                        return;
+
+                    case BUFFER_UNDERFLOW:
+                        throw new SSLException("Buffer underflow occurred after a wrap.");
+
+                    case BUFFER_OVERFLOW:
+                        netData = this.increaseBufferSize(netData, engine.getSession().getPacketBufferSize());
+                        break;
+
+                    default:
+                        throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
+                }
             }
         }
+    }
+
+    protected ReadResult read(SocketChannel socket, SSLEngine engine) throws Exception {
+        Logger.debug(DebugType.SSL, "Going to read from the server...");
+
+        ByteBuffer peerAppData = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize()),
+            peerNetData = ByteBuffer.allocate(engine.getSession().getPacketBufferSize());
+
+        int bytesRead = -1;
+
+        peerNetData.clear();
+
+        synchronized(writeLock) {
+            bytesRead = socket.read(peerNetData);
+
+            if (bytesRead > 0) {
+                peerNetData.flip();
+
+                while (peerNetData.hasRemaining()) {   
+                    SSLEngineResult result = engine.unwrap(peerNetData, peerAppData);
+                    switch (result.getStatus()) {
+                        case OK:
+                            // if (read) read = false;
+                            break;
+
+                        case CLOSED:
+                            this.closeConnection(socket, engine);
+                            return new ReadResult(bytesRead, peerAppData);
+
+                        case BUFFER_UNDERFLOW:
+                            peerNetData = this.processBufferUnderflow(engine, peerNetData);
+                            break;
+
+                        case BUFFER_OVERFLOW:
+                            peerAppData = this.increaseBufferSize(peerAppData, engine.getSession().getApplicationBufferSize());
+                            break;
+
+                        default:
+                            throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
+                    }
+                }
+            }
+            else if (bytesRead < 0) {
+                this.processEndOfStream(socket, engine);
+                return new ReadResult(bytesRead, peerAppData);
+            }
+        }
+
+        peerAppData.flip();
+        return new ReadResult(bytesRead, peerAppData);
     }
 
     protected boolean executeHandshake(SocketChannel socketChannel, SSLEngine engine) throws IOException {
 
         Logger.debug(DebugType.SSL, "Starting handshake");
 
-        SSLEngineResult result;
-        SSLEngineResult.HandshakeStatus status;
-
         int bufferSize = engine.getSession().getApplicationBufferSize();
-        ByteBuffer appData = ByteBuffer.allocate(bufferSize);
-        ByteBuffer peerAppData = ByteBuffer.allocate(bufferSize);
-        this.netData.clear();
-        this.peerNetData.clear();
+        
+        ByteBuffer appData = ByteBuffer.allocate(bufferSize),
+            netData = ByteBuffer.allocate(bufferSize),
+            peerAppData = ByteBuffer.allocate(bufferSize),
+            peerNetData = ByteBuffer.allocate(bufferSize);
 
-        status = engine.getHandshakeStatus();
-        while(status != SSLEngineResult.HandshakeStatus.FINISHED && status != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING){
-            switch (status){
+        SSLEngineResult result;
+        SSLEngineResult.HandshakeStatus status = engine.getHandshakeStatus();
+
+        while (status != SSLEngineResult.HandshakeStatus.FINISHED && status != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+            switch (status) {
                 case NEED_UNWRAP:
-                    if(socketChannel.read(this.peerNetData) < 0){
-                        if(engine.isInboundDone() && engine.isOutboundDone())
+                    if (socketChannel.read(peerNetData) < 0) {
+                        if (engine.isInboundDone() && engine.isOutboundDone())
                             return false;
 
-                        engine.closeInbound();
+                        try {
+                            engine.closeInbound();
+                        } catch(Exception e) {
+                            Logger.error("closing inbound during handshake", e, true);
+                        }
+
                         engine.closeOutbound();
                         status = engine.getHandshakeStatus();
                         break;
                     }
-                    this.peerNetData.flip();
-                    try{
-                        result = engine.unwrap(this.peerNetData, peerAppData);
-                        this.peerNetData.compact();
+                    peerNetData.flip();
+                    try {
+                        result = engine.unwrap(peerNetData, peerAppData);
+                        peerNetData.compact();
                         status = result.getHandshakeStatus();
                     }
                     catch (SSLException exception){
+                        Logger.error("unwrapping during handshake", exception, true);
+                        
                         engine.closeOutbound();
                         status = engine.getHandshakeStatus();
                         break;
@@ -101,6 +164,7 @@ public abstract class SSLPeer {
                     switch (result.getStatus()){
                         case OK:
                             break;
+
                         case CLOSED:
                             if (engine.isOutboundDone()) {
                                 return false;
@@ -109,62 +173,77 @@ public abstract class SSLPeer {
                                 status = engine.getHandshakeStatus();
                                 break;
                             }
+
                         case BUFFER_OVERFLOW:
                             peerAppData = this.increaseBufferSize(peerAppData, engine.getSession().getApplicationBufferSize());
                             break;
+
                         case BUFFER_UNDERFLOW:
-                            this.peerNetData = this.processBufferUnderflow(engine, this.peerNetData);
+                            peerNetData = this.processBufferUnderflow(engine, peerNetData);
                             break;
+
                         default:
                             throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
                     }
                     break;
+
                 case NEED_WRAP:
-                    this.netData.clear();
-                    try{
-                        result = engine.wrap(appData, this.netData);
+                    netData.clear();
+                    try {
+                        result = engine.wrap(appData, netData);
                         status = result.getHandshakeStatus();
                     }
-                    catch (SSLException exception){
+                    catch (SSLException exception) {
+                        Logger.error("wrapping during handshake", exception, true);
+
                         engine.closeOutbound();
                         status = engine.getHandshakeStatus();
                         break;
                     }
-                    switch (result.getStatus()){
+
+                    switch (result.getStatus()) {
                         case OK:
-                            this.netData.flip();
-                            while (this.netData.hasRemaining()){
-                                socketChannel.write(this.netData);
+                            netData.flip();
+                            while (netData.hasRemaining()){
+                                socketChannel.write(netData);
                             }
                             break;
+
                         case CLOSED:
-                            try{
-                                this.netData.flip();
-                                while(this.netData.hasRemaining()){
-                                    socketChannel.write(this.netData);
-                                }
-                                this.peerNetData.clear();
+                            try {
+                                netData.flip();
+                                while (netData.hasRemaining())
+                                    socketChannel.write(netData);
+
+                                peerNetData.clear();
                             }
-                            catch (Exception exception){
+                            catch (Exception exception) {
+                                Logger.error("writing to socket channel", exception, false);
+
                                 status = engine.getHandshakeStatus();
                             }
                             break;
+
                         case BUFFER_UNDERFLOW:
                             throw new SSLException("Buffer underflow occurred after a wrap.");
+                        
                         case BUFFER_OVERFLOW:
-                            this.netData = this.increaseBufferSize(this.netData, engine.getSession().getPacketBufferSize());
+                            netData = this.increaseBufferSize(netData, engine.getSession().getPacketBufferSize());
                             break;
+
                         default:
                             throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
                     }
                     break;
+
                 case NEED_TASK:
                     Runnable task;
-                    while((task = engine.getDelegatedTask()) != null){
+                    while ((task = engine.getDelegatedTask()) != null)
                         executor.execute(task);
-                    }
+
                     status = engine.getHandshakeStatus();
                     break;
+
                 case FINISHED:
                 case NOT_HANDSHAKING:
                     break;
@@ -200,9 +279,12 @@ public abstract class SSLPeer {
     }
 
     protected void closeConnection(SocketChannel socketChannel, SSLEngine engine) throws IOException  {
-        engine.closeOutbound();
-        executeHandshake(socketChannel, engine);
-        socketChannel.close();
+        synchronized(writeLock)
+        {
+            engine.closeOutbound();
+            executeHandshake(socketChannel, engine);
+            socketChannel.close();
+        }
     }
 
     protected void processEndOfStream(SocketChannel socketChannel, SSLEngine engine) throws IOException  {
@@ -240,9 +322,5 @@ public abstract class SSLPeer {
         TrustManagerFactory trustFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustFactory.init(trustStore);
         return trustFactory.getTrustManagers();
-    }
-
-    public ByteBuffer getPeerAppData() {
-        return peerAppData;
     }
 }

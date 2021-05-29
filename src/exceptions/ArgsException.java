@@ -17,7 +17,8 @@ public class ArgsException extends Exception {
         PEER_ID,
         SERVER_PORT,
         PREEXISTING_PEER_PORT,
-        FILE_KEY
+        FILE_KEY,
+        INVALID_MESSAGE
     }
 
     private static final ConcurrentMap<Type, String> messages = new ConcurrentHashMap<>();
@@ -34,6 +35,7 @@ public class ArgsException extends Exception {
         messages.put(Type.FILE_KEY, "Invalid file key. Must be an integer.");
         messages.put(Type.SERVER_PORT, "Invalid server port. Must be a positive integer.");
         messages.put(Type.PREEXISTING_PEER_PORT, "Invalid preexisting peer port. Must be a positive integer.");
+        messages.put(Type.INVALID_MESSAGE, "Received invalid message");
     }
 
     public ArgsException(Type type) {

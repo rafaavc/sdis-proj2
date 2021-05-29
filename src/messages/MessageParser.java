@@ -26,11 +26,11 @@ public class MessageParser {
             }
         }
 
-        Logger.debug(DebugType.MESSAGE, "Parsing message: " + new String(data).trim());
-
         String header = new String(Arrays.copyOf(data, headerEnd + 1));
 
         String[] headerPieces = header.split(" +"); // regex for spaces (works with multiple spaces)
+
+        if (headerPieces.length < 3) throw new ArgsException(Type.INVALID_MESSAGE);
 
         String version = headerPieces[0], messageType = headerPieces[1];
 

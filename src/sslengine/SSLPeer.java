@@ -19,43 +19,12 @@ public abstract class SSLPeer {
     /* Executor for handshake tasks */
     protected ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    private Object wrapLock = new Object(), unwrapLock = new Object();
+
     protected void initContext(SSLContext context) throws Exception {
         context.init(createKeyManagers("../sslengine/keys/client.jks", "123456", "123456"), 
             createTrustManagers("../sslengine/keys/truststore.jks", "123456"), 
             new SecureRandom());
-    }
-
-    public SSLEngineResult wrap(SSLEngine engine, ByteBuffer appData, ByteBuffer netData) throws SSLException {
-        return engine.wrap(appData, netData);
-    }
-
-    public void writeAfterWrap(ByteBuffer netData, SSLEngineResult result, SocketChannel socket, SSLEngine engine) throws Exception {
-        Logger.debug(DebugType.SSL, "Going to write to the client...");
-        switch (result.getStatus()) {
-            case OK:
-                netData.flip();
-
-                while (netData.hasRemaining())
-                    socket.write(netData);
-
-                Logger.debug(DebugType.SSL, "Sent to the client!");
-                
-                break;
-
-            case CLOSED:
-                this.closeConnection(socket, engine);
-                return;
-
-            case BUFFER_UNDERFLOW:
-                throw new SSLException("Buffer underflow occurred after a wrap.");
-
-            case BUFFER_OVERFLOW:
-                netData = this.increaseBufferSize(netData, engine.getSession().getPacketBufferSize());
-                break;
-
-            default:
-                throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
-        }
     }
     
     public void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
@@ -66,7 +35,7 @@ public abstract class SSLPeer {
 
         while (appData.hasRemaining()) {
             netData.clear();
-            synchronized(this) {
+            synchronized(wrapLock) {
                 SSLEngineResult result = engine.wrap(appData, netData);
 
                 switch (result.getStatus()) {
@@ -108,16 +77,18 @@ public abstract class SSLPeer {
 
         peerNetData.clear();
 
-        synchronized(this) {
+        synchronized(unwrapLock) {
             bytesRead = socket.read(peerNetData);
 
             if (bytesRead > 0) {
                 peerNetData.flip();
 
-                while (peerNetData.hasRemaining()) {   
+                while (peerNetData.hasRemaining()) {
+                    peerAppData.clear(); // ??
                     SSLEngineResult result = engine.unwrap(peerNetData, peerAppData);
                     switch (result.getStatus()) {
                         case OK:
+                            peerAppData.flip(); // ??
                             // if (read) read = false;
                             break;
 

@@ -61,6 +61,10 @@ public class P implements ClientInterface {
         return null;
     }
 
+    public String getFingerTableString() {
+        return null;
+    }
+
     @Override
     public Result backup(String filePath, int replicationDegree) throws RemoteException {
         return null;

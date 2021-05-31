@@ -82,7 +82,6 @@ public class Chord {
             //         Logger.error(e, true);
             //     }
             // }, 500, 300, TimeUnit.MILLISECONDS);
-            configuration.getThreadScheduler().scheduleWithFixedDelay(() -> printFingerTable(), 0, 10, TimeUnit.SECONDS);
         }
     }
 
@@ -224,12 +223,9 @@ public class Chord {
         Logger.debug(DebugType.CHORD, "Stabilize");
 
         if (successor.getId() == getId()) return;
-        
-        SSLClient client = new SSLClient(successor.getInetAddress().getHostAddress(), successor.getPort());
-        client.connect();
 
         Logger.debug(DebugType.CHORD, "Sending GETPREDECESSOR to " + successor);
-        Message reply = client.sendAndReadReply(messageFactory.getGetPredecessorMessage(self.getId()));
+        Message reply = SSLClient.sendAndGetReply(configuration, successor.getInetSocketAddress(), messageFactory.getGetPredecessorMessage(self.getId())).get();
 
         try {
             ChordNode predecessorOfSuccessor = reply.getNode();  // if it has no predecessor it will throw exception
@@ -242,8 +238,6 @@ public class Chord {
             Logger.debug(DebugType.CHORD, "Didn't have predecessor yet!");
         }
 
-        client.shutdown();
-
         notifyPredecessor(successor);
         Logger.debug(DebugType.CHORD, "Stabilize ended");
     }
@@ -253,7 +247,7 @@ public class Chord {
      * @param successor the node's successor
     */
     public void notifyPredecessor(ChordNode successor) throws Exception {
-        Logger.debug(DebugType.CHORD, "Notifying successor " + successor);
+        Logger.debug(DebugType.CHORD, "Sending NOTIFY to successor " + successor);
 
         SSLClient client = new SSLClient(successor.getInetAddress().getHostAddress(), successor.getPort());
         client.connect();
@@ -274,7 +268,7 @@ public class Chord {
      * @param predecessor the node's predecessor
      */
     public void notify(ChordNode newPredecessor) {
-        Logger.debug(DebugType.CHORD, "Sending NOTIFY to " + newPredecessor);
+        Logger.debug(DebugType.CHORD, "Received NOTIFY" + newPredecessor);
         // if doesn't have predecessor or the current predecessor is no longer valid
         if (predecessor == null || isBetween(newPredecessor.getId(), predecessor.getId(), self.getId(), false)) 
         {
@@ -367,7 +361,7 @@ public class Chord {
         return lookup(peerAddress, k, self.getId());
     }
 
-    public void printFingerTable() {
+    public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("\n----------------------------------------------\n");
         builder.append("%% Finger table of node " + getId() + " %%\n");
@@ -378,7 +372,11 @@ public class Chord {
             builder.append(getFingerTableIndexId(i) + ": " + node.getId() + " | " + node.getInetSocketAddress().toString() + "\n");
         }
         builder.append("----------------------------------------------\n\n");
-        Logger.log(builder.toString());
+        return builder.toString();
+    }
+
+    public void printFingerTable() {
+        Logger.log(toString());
     }
 }
 

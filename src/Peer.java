@@ -75,34 +75,6 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
                 
             //     // Thread.sleep(50 + (int) (Math.random() * 50));
             // }
-
-            SSLClient client1 = new SSLClient(configuration.getChord().getSuccessor().getInetAddress().getHostAddress(), configuration.getChord().getSuccessor().getPort());
-            client1.connect();
-
-            SSLClient client2 = new SSLClient(configuration.getChord().getSuccessor().getInetAddress().getHostAddress(), configuration.getChord().getSuccessor().getPort());
-            client2.connect();
-
-            ByteBuffer appData1 = ByteBuffer.wrap(new MessageFactory(configuration.getProtocolVersion()).getLookupMessage(configuration.getChord().getId(), 1029).getBytes());
-            ByteBuffer appData2 = ByteBuffer.wrap(new MessageFactory(configuration.getProtocolVersion()).getLookupMessage(configuration.getChord().getId(), 2879).getBytes());
-            ByteBuffer netData1 = ByteBuffer.allocate(64000);
-            ByteBuffer netData2 = ByteBuffer.allocate(64000);
-
-            SSLEngineResult result1 = client1.wrap(client1.getEngine(), appData1, netData1);
-            SSLEngineResult result2 = client2.wrap(client2.getEngine(), appData2, netData2);
-
-            client2.writeAfterWrap(netData2, result2, client2.getSocket(), client2.getEngine());
-
-            client1.writeAfterWrap(netData1, result1, client1.getSocket(), client1.getEngine());
-
-            client1.read();
-            client2.read();
-
-            Thread.sleep(15000);
-            client2.shutdown();
-            client1.shutdown();
-
-
-
             
         } catch (Exception e) {
             Logger.error(e, true);
@@ -191,6 +163,10 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
             Logger.error(e, true);
         }
         return null;
+    }
+
+    public String getFingerTableString() {
+        return this.configuration.getChord().toString();
     }
 
     public PeerState getPeerState() {

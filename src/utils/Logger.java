@@ -15,8 +15,8 @@ public class Logger {
 
     private static List<DebugType> active = new ArrayList<>();
     static {
-        //setActive(DebugType.SSL);
-        setActive(DebugType.MESSAGE);
+        // setActive(DebugType.SSL);
+        // setActive(DebugType.MESSAGE);
         // setActive(DebugType.CHORD);
     }
 

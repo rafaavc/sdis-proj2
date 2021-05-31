@@ -69,6 +69,9 @@ public class TestApp {
                 case "STATE": 
                     Logger.log(stub.getPeerState().toString());
                     break;
+                case "FINGERS":
+                    Logger.log(stub.getFingerTableString());
+                    break;
                 case "SSL": case "SEND_MESSAGE":
                     if (args.length < 3) {
                         Logger.error("To send message I need the number of threads.");

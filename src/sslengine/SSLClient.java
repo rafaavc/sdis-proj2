@@ -107,7 +107,7 @@ public class SSLClient extends SSLPeer{
 
     public static Future<Message> sendAndGetReply(PeerConfiguration configuration, InetSocketAddress address, Message message) throws Exception {
         CompletableFuture<Message> future = new CompletableFuture<>();
-        configuration.getThreadScheduler().submit(() ->{
+        configuration.getThreadScheduler().submit(() -> {
             try {
                 SSLClient client = new SSLClient(address.getAddress().getHostAddress(), address.getPort());
                 client.connect();

@@ -94,45 +94,46 @@ public class SSLServer extends SSLPeer {
                         SocketChannel socket = (SocketChannel) key.channel();
                         SSLEngine engine = (SSLEngine) key.attachment();
 
-                        String address = socket.getRemoteAddress().toString();
+                        String clientAddress = socket.getRemoteAddress().toString();
+                        Thread.sleep(100);
 
                         ReadResult msg;
-                        try {
+                        try 
+                        {
                             msg = read(socket, engine);
-                        } catch (Exception e) {
-                            Logger.error("reading in server", e, !e.getMessage().trim().equals("Tag mismatch!"));
+                        } 
+                        catch (Exception e) 
+                        {
+                            Logger.error("reading in server", e, e.getMessage() != null && !e.getMessage().trim().equals("Tag mismatch!"));
                             continue;
                         }
 
                         threadpool.execute(() -> {
                             try 
                             {
-                                    if (msg.getBytesRead() > 0) {
+                                if (msg.getBytesRead() > 0) {
 
-                                        try 
-                                        {   
-                                            Message message;
-                                            try {
-                                                message = MessageParser.parse(msg.getData().array(), msg.getBytesRead());
-                                            } catch(Exception e) {
-                                                return;
-                                            }
-                                            
-                                            try {
-                                                router.handle(message, socket, engine, address);
-                                            }
-                                            catch (ClosedChannelException e) {
-                                                Logger.error("The channel was closed! The message was " + message.getMessageType() + " Probably because peer didn't care about the answer.");
-                                            }
+                                    try 
+                                    {   
+                                        Message message;
+                                        try {
+                                            message = MessageParser.parse(msg.getData().array(), msg.getBytesRead());
+                                        } catch(Exception e) {
+                                            return;
                                         }
-                                        catch (Exception e)
-                                        {
-                                            Logger.error("handling server request", e, true);
+                                        
+                                        try {
+                                            router.handle(message, socket, engine, clientAddress);
+                                        }
+                                        catch (ClosedChannelException e) {
+                                            Logger.error("The channel was closed! The message was " + message.getMessageType() + " Probably because peer didn't care about the answer.");
                                         }
                                     }
-
-                                    // if (msg.getBytesRead() != 0) read = false;
-                                //}
+                                    catch (Exception e)
+                                    {
+                                        Logger.error("handling server request", e, true);
+                                    }
+                                }
                             }
                             catch (Exception e)
                             {
@@ -172,8 +173,9 @@ public class SSLServer extends SSLPeer {
 
         SSLEngine engine = context.createSSLEngine();
         engine.setUseClientMode(false);
-        engine.beginHandshake();
 
+        engine.beginHandshake();
+        
         if (this.executeHandshake(socket, engine))
             socket.register(selector, SelectionKey.OP_READ, engine);
         else {

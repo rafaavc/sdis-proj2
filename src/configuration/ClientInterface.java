@@ -10,6 +10,7 @@ public interface ClientInterface extends Remote {
     public void hi() throws RemoteException;
     public void sendMessageToServer(int n) throws RemoteException;
     public PeerState getPeerState() throws RemoteException;
+    public String getFingerTableString() throws RemoteException;
     public Result backup(String filePath, int replicationDegree) throws RemoteException;
     public Result restore(String fileName) throws RemoteException;
     public Result delete(String fileName) throws RemoteException;

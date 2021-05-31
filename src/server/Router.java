@@ -4,6 +4,8 @@ import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLEngine;
 
+import messages.Message;
+
 public interface Router {
-    public void handle(byte[] dataReceived, int length, SocketChannel socket, SSLEngine engine) throws Exception;
+    public void handle(Message message, SocketChannel socket, SSLEngine engine, String address) throws Exception;
 }

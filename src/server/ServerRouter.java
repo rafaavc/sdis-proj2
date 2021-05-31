@@ -23,13 +23,8 @@ public class ServerRouter implements Router {
         this.messageFactory = new MessageFactory(configuration.getProtocolVersion());
     }
 
-    public void handle(byte[] dataReceived, int length, SocketChannel socket, SSLEngine engine) throws Exception {
-        Message message;
-        try {
-            message = MessageParser.parse(dataReceived, length);
-        } catch (Exception e) { return; }
-
-        Logger.debug(message, socket.getRemoteAddress().toString());
+    public void handle(Message message, SocketChannel socket, SSLEngine engine, String address) throws Exception {
+        Logger.debug(message, address);
 
         byte[] response = null;
 
@@ -53,8 +48,6 @@ public class ServerRouter implements Router {
             case NOTIFY:
                 Logger.debug(DebugType.CHORD, "Received NOTIFY");
                 configuration.getChord().notify(message.getNode());
-
-                response = "OK".getBytes();
                 break;
 
             default:

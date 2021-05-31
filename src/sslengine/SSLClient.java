@@ -5,6 +5,7 @@ import utils.Logger.DebugType;
 
 import javax.net.ssl.*;
 
+import configuration.PeerConfiguration;
 import messages.Message;
 import messages.MessageParser;
 
@@ -12,6 +13,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 
 public class SSLClient extends SSLPeer{
@@ -45,18 +48,15 @@ public class SSLClient extends SSLPeer{
     }
 
     public boolean connect() throws IOException{
-        synchronized(writeLock) 
-        {
-            this.socket = SocketChannel.open();
-            this.socket.configureBlocking(false);
-            this.socket.connect(new InetSocketAddress(this.address, this.port));
+        this.socket = SocketChannel.open();
+        this.socket.configureBlocking(false);
+        this.socket.connect(new InetSocketAddress(this.address, this.port));
 
-            boolean loop = this.socket.finishConnect();
-            while (!loop) loop = this.socket.finishConnect();
+        boolean loop = this.socket.finishConnect();
+        while (!loop) loop = this.socket.finishConnect();
 
-            this.engine.beginHandshake();
-            return this.executeHandshake(socket, this.engine);
-        }
+        this.engine.beginHandshake();
+        return this.executeHandshake(socket, this.engine);
     }
 
     public void write(Message message) throws Exception {
@@ -103,6 +103,25 @@ public class SSLClient extends SSLPeer{
     public void read(BiConsumer<byte[], Integer> consumer) throws Exception {
         ReadResult msg = read(this.socket, this.engine);
         if (consumer != null) consumer.accept(msg.getData().array(), msg.getBytesRead());
+    }
+
+    public static Future<Message> sendAndGetReply(PeerConfiguration configuration, InetSocketAddress address, Message message) throws Exception {
+        CompletableFuture<Message> future = new CompletableFuture<>();
+        configuration.getThreadScheduler().submit(() ->{
+            try {
+                SSLClient client = new SSLClient(address.getAddress().getHostAddress(), address.getPort());
+                client.connect();
+                
+                Message reply = client.sendAndReadReply(message, true);
+                future.complete(reply);
+
+                client.shutdown();
+            } catch(Exception e) {
+                future.completeExceptionally(e);
+            }
+
+        });
+        return future;
     }
 
     public void shutdown() throws IOException {

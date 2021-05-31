@@ -6,6 +6,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.concurrent.TimeUnit;
 
 import configuration.PeerConfiguration;
 import configuration.ProtocolVersion;
@@ -28,7 +29,12 @@ public class Main {
 
                 configuration.getServer().stop();
                 
-                configuration.getThreadScheduler().shutdown();
+                try {
+                    if (!configuration.getThreadScheduler().awaitTermination(3, TimeUnit.SECONDS))
+                        throw new Exception();
+                } catch(Exception e) {
+                    configuration.getThreadScheduler().shutdown();
+                }
 
                 try {
                     peer.writeState();

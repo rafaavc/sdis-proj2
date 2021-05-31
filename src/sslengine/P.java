@@ -1,6 +1,7 @@
 package sslengine;
 
 import configuration.ClientInterface;
+import messages.Message;
 import server.Router;
 import state.PeerState;
 import utils.Logger;
@@ -21,8 +22,13 @@ public class P implements ClientInterface {
     private SSLClient client;
 
     private class MyRouter implements Router {
-        public void handle(byte[] dataReceived, int length, SocketChannel socket, SSLEngine engine) throws Exception {
-            Logger.log("Received from client with address " + socket.getRemoteAddress().toString() + ":\n" + new String(dataReceived));
+        public void handle(Message message, SocketChannel socket, SSLEngine engine, String address) throws Exception {
+            Logger.log("Received from client with address " + address + ":\n" + message.toString());
+            server.write(socket, engine, "I am your server".getBytes());
+        }
+        
+        public void handle(byte[] dataReceived, int length, SocketChannel socket, SSLEngine engine, String address) throws Exception {
+            Logger.log("Received from client with address " + address + ":\n" + new String(dataReceived));
             server.write(socket, engine, "I am your server".getBytes());
         }
     }

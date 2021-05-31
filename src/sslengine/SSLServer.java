@@ -5,11 +5,14 @@ import utils.Logger.DebugType;
 
 import javax.net.ssl.*;
 
+import messages.Message;
+import messages.MessageParser;
 import server.Router;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -88,35 +91,39 @@ public class SSLServer extends SSLPeer {
 
                     else if (key.isReadable()) 
                     {
-                        key.cancel();
-
                         SocketChannel socket = (SocketChannel) key.channel();
                         SSLEngine engine = (SSLEngine) key.attachment();
 
-                        // int count = 0;
-                        // boolean read = true;
-                        // while (read) {
-                        //     System.out.println("Reading time: " + count);
-                        //     count++;
-                            // Thread.sleep(200);
+                        String address = socket.getRemoteAddress().toString();
+
                         ReadResult msg;
                         try {
                             msg = read(socket, engine);
                         } catch (Exception e) {
-                            Logger.log("Got exception during server read " + e.getMessage());
-                            Logger.error("reading in server", e, true);
-                            return;
+                            Logger.error("reading in server", e, !e.getMessage().trim().equals("Tag mismatch!"));
+                            continue;
                         }
 
                         threadpool.execute(() -> {
                             try 
                             {
-                                    Logger.log("Got bytes read = " + msg.getBytesRead() + " and message was " + new String(msg.getData().array()));
-
                                     if (msg.getBytesRead() > 0) {
+
                                         try 
-                                        {
-                                            router.handle(msg.getData().array(), msg.getBytesRead(), socket, engine);
+                                        {   
+                                            Message message;
+                                            try {
+                                                message = MessageParser.parse(msg.getData().array(), msg.getBytesRead());
+                                            } catch(Exception e) {
+                                                return;
+                                            }
+                                            
+                                            try {
+                                                router.handle(message, socket, engine, address);
+                                            }
+                                            catch (ClosedChannelException e) {
+                                                Logger.error("The channel was closed! The message was " + message.getMessageType() + " Probably because peer didn't care about the answer.");
+                                            }
                                         }
                                         catch (Exception e)
                                         {
@@ -158,25 +165,21 @@ public class SSLServer extends SSLPeer {
     }
 
     public void accept(SelectionKey key) throws IOException {
-        synchronized(writeLock) 
-        {
-            Logger.debug(DebugType.SSL, "New connection on hold!");
+        Logger.debug(DebugType.SSL, "New connection on hold!");
 
-            SocketChannel socket = ((ServerSocketChannel) key.channel()).accept();
-            socket.configureBlocking(false);
+        SocketChannel socket = ((ServerSocketChannel) key.channel()).accept();
+        socket.configureBlocking(false);
 
-            SSLEngine engine = context.createSSLEngine();
-            engine.setUseClientMode(false);
-            engine.beginHandshake();
+        SSLEngine engine = context.createSSLEngine();
+        engine.setUseClientMode(false);
+        engine.beginHandshake();
 
-            if (this.executeHandshake(socket, engine))
-                socket.register(selector, SelectionKey.OP_READ, engine);
-            else {
-                socket.close();
-                Logger.error("Couldn't connect due to a handshake failure!");  // TODO maybe throw exception?
-            }
+        if (this.executeHandshake(socket, engine))
+            socket.register(selector, SelectionKey.OP_READ, engine);
+        else {
+            socket.close();
+            Logger.error("Couldn't connect due to a handshake failure!");  // TODO maybe throw exception?
         }
-
     }
 }
 

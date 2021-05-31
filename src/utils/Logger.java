@@ -17,7 +17,7 @@ public class Logger {
     static {
         //setActive(DebugType.SSL);
         setActive(DebugType.MESSAGE);
-        setActive(DebugType.CHORD);
+        // setActive(DebugType.CHORD);
     }
 
     public static void setActive(DebugType type) {

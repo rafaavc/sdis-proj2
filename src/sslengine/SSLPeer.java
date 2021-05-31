@@ -75,8 +75,6 @@ public abstract class SSLPeer {
 
         int bytesRead = -1;
 
-        peerNetData.clear();
-
         synchronized(unwrapLock) {
             bytesRead = socket.read(peerNetData);
 
@@ -122,13 +120,11 @@ public abstract class SSLPeer {
     protected boolean executeHandshake(SocketChannel socketChannel, SSLEngine engine) throws IOException {
 
         Logger.debug(DebugType.SSL, "Starting handshake");
-
-        int bufferSize = engine.getSession().getApplicationBufferSize();
         
-        ByteBuffer appData = ByteBuffer.allocate(bufferSize),
-            netData = ByteBuffer.allocate(bufferSize),
-            peerAppData = ByteBuffer.allocate(bufferSize),
-            peerNetData = ByteBuffer.allocate(bufferSize);
+        ByteBuffer appData = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize()),
+            netData = ByteBuffer.allocate(engine.getSession().getPacketBufferSize()),
+            peerAppData = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize()),
+            peerNetData = ByteBuffer.allocate(engine.getSession().getPacketBufferSize());
 
         SSLEngineResult result;
         SSLEngineResult.HandshakeStatus status = engine.getHandshakeStatus();
@@ -281,12 +277,9 @@ public abstract class SSLPeer {
     }
 
     protected void closeConnection(SocketChannel socketChannel, SSLEngine engine) throws IOException  {
-        synchronized(this)
-        {
-            engine.closeOutbound();
-            executeHandshake(socketChannel, engine);
-            socketChannel.close();
-        }
+        engine.closeOutbound();
+        executeHandshake(socketChannel, engine);
+        socketChannel.close();
     }
 
     protected void processEndOfStream(SocketChannel socketChannel, SSLEngine engine) throws IOException  {

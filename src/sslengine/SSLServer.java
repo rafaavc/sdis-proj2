@@ -95,7 +95,6 @@ public class SSLServer extends SSLPeer {
                         SSLEngine engine = (SSLEngine) key.attachment();
 
                         String clientAddress = socket.getRemoteAddress().toString();
-                        Thread.sleep(100);
 
                         ReadResult msg;
                         try 

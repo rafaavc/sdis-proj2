@@ -105,17 +105,48 @@ public class SSLClient extends SSLPeer{
         if (consumer != null) consumer.accept(msg.getData().array(), msg.getBytesRead());
     }
 
+    public Message readReply() throws InterruptedException {
+        int count = 0;
+        while (true) {
+            try
+            {
+                ReadResult data = read(socket, engine);
+                if (data.getBytesRead() <= 0) throw new Exception();
+                return MessageParser.parse(data.getData().array(), data.getBytesRead());
+            } 
+            catch (Exception e)
+            {
+                count++;
+                if (count > 4) break; // couldn't read reply
+                Thread.sleep(count * 250);
+            }
+        }
+        return null;
+    }
+
     public static Future<Message> sendAndGetReply(PeerConfiguration configuration, InetSocketAddress address, Message message) throws Exception {
         CompletableFuture<Message> future = new CompletableFuture<>();
         configuration.getThreadScheduler().submit(() -> {
             try {
-                SSLClient client = new SSLClient(address.getAddress().getHostAddress(), address.getPort());
-                client.connect();
                 
-                Message reply = client.sendAndReadReply(message, true);
-                future.complete(reply);
+                int total = 0;
+                while (total < 5 && !future.isDone()) {
+                    total++;
+                
+                    SSLClient client = new SSLClient(address.getAddress().getHostAddress(), address.getPort());
+                    client.connect();
 
-                client.shutdown();
+                    client.write(message);
+
+                    Message reply = client.readReply();
+
+                    client.shutdown();
+
+                    if (reply != null) future.complete(reply);
+                }
+
+                if (!future.isDone()) throw new Exception("Couldn't get a reply to message: " + message.toString().trim());
+
             } catch(Exception e) {
                 future.completeExceptionally(e);
             }

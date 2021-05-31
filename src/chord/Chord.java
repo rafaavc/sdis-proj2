@@ -39,9 +39,9 @@ public class Chord {
      * @throws Exception
      */
     public Chord(PeerConfiguration configuration, InetSocketAddress peerAddress, InetSocketAddress preexistingNode) throws Exception {
-        int id = -1;        
+        int id = -1;
 
-        boolean turnoff = false;  // if true chord is turned off (useful for testing other stuff)
+        boolean turnoff = true;  // if true chord is turned off (useful for testing other stuff)
 
         this.m = 32; // an integer has 32 bits
         this.configuration = configuration;

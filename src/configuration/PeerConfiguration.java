@@ -24,7 +24,6 @@ import utils.IPFinder;
 import utils.Logger;
 
 public class PeerConfiguration {
-    private final int peerId;
     private final String serviceAccessPoint;
     private final ProtocolVersion protocolVersion;
     private final PeerState state;
@@ -33,17 +32,13 @@ public class PeerConfiguration {
     private final SSLServer server;
     private final Chord chord;
 
-    public PeerConfiguration(ProtocolVersion protocolVersion, int peerId, String serviceAccessPoint, int serverPort) throws Exception {
-        this(protocolVersion, peerId, serviceAccessPoint, serverPort, null);
+    public PeerConfiguration(ProtocolVersion protocolVersion, String serviceAccessPoint, int serverPort) throws Exception {
+        this(protocolVersion, serviceAccessPoint, serverPort, null);
     }
 
-    public PeerConfiguration(ProtocolVersion protocolVersion, int peerId, String serviceAccessPoint, int serverPort, InetSocketAddress preexistingNode) throws Exception {
+    public PeerConfiguration(ProtocolVersion protocolVersion, String serviceAccessPoint, int serverPort, InetSocketAddress preexistingNode) throws Exception {
         this.protocolVersion = protocolVersion;
-        this.peerId = peerId;
         this.serviceAccessPoint = serviceAccessPoint;
-
-        this.state = PeerState.read(getRootDir());
-        FileManager.createPeerStateAsynchronousChannel(getRootDir());
 
         this.chunkTracker = new ChunkTracker();
         this.threadScheduler = new ScheduledThreadPoolExecutor(30);
@@ -56,6 +51,9 @@ public class PeerConfiguration {
             this.chord = new Chord(this, new InetSocketAddress(ip, serverPort), preexistingNode);
         else 
             this.chord = new Chord(this, new InetSocketAddress(ip, serverPort));
+
+        this.state = PeerState.read(getRootDir());
+        FileManager.createPeerStateAsynchronousChannel(getRootDir());
 
         Logger.log("My IP is " + ip + "\nMy Chord ring id is " + this.chord.getId());
     }
@@ -85,7 +83,7 @@ public class PeerConfiguration {
     }
 
     public String getRootDir() {
-        return "../filesystem/" + this.peerId;
+        return "../filesystem/p" + getPeerId();
     }
 
     public ProtocolVersion getProtocolVersion() {
@@ -105,7 +103,7 @@ public class PeerConfiguration {
     }
 
     public int getPeerId() {
-        return peerId;
+        return chord.getId();
     }
 
     public String getServiceAccessPoint() {

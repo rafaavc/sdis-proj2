@@ -53,37 +53,32 @@ public class Main {
     }
 
     public static PeerConfiguration parseArgs(String args[]) throws Exception {
-        if (args.length != 4 && args.length != 6) throw new ArgsException(ArgsException.Type.ARGS_LENGTH);
+        if (args.length != 3 && args.length != 5) throw new ArgsException(ArgsException.Type.ARGS_LENGTH);
 
         // Need to verify better
         ProtocolVersion protocolVersion = new ProtocolVersion(args[0]);
         if (!protocolVersion.equals("1.0") && ! protocolVersion.equals("1.1")) throw new ArgsException(Type.UNKNOWN_VERSION_NO, protocolVersion.toString());
 
-        int peerId, serverPort;
-        try {
-            peerId = Integer.parseInt(args[1]);
-        } catch(NumberFormatException e) {
-            throw new ArgsException(Type.PEER_ID, args[1]);
-        }
+        int serverPort;
 
         try {
-            serverPort = Integer.parseInt(args[3]);
+            serverPort = Integer.parseInt(args[2]);
             if (serverPort <= 0) throw new Exception();
         } catch(Exception e) {
-            throw new ArgsException(Type.SERVER_PORT, args[3]);
+            throw new ArgsException(Type.SERVER_PORT, args[2]);
         }
 
-        String serviceAccessPoint = args[2];
+        String serviceAccessPoint = args[1];
 
-        if (args.length > 4) {
-            InetAddress preexistingPeerAddress = InetAddress.getByName(args[4]);
+        if (args.length > 3) {
+            InetAddress preexistingPeerAddress = InetAddress.getByName(args[3]);
 
             try 
             {
-                int preexistingPeerPort = Integer.parseInt(args[5]);
+                int preexistingPeerPort = Integer.parseInt(args[4]);
                 if (serverPort <= 0) throw new NumberFormatException();
 
-                return new PeerConfiguration(protocolVersion, peerId, serviceAccessPoint, serverPort, new InetSocketAddress(preexistingPeerAddress, preexistingPeerPort));
+                return new PeerConfiguration(protocolVersion, serviceAccessPoint, serverPort, new InetSocketAddress(preexistingPeerAddress, preexistingPeerPort));
             } 
             catch(NumberFormatException e) 
             {
@@ -91,6 +86,6 @@ public class Main {
             }
         }
         
-        return new PeerConfiguration(protocolVersion, peerId, serviceAccessPoint, serverPort);
+        return new PeerConfiguration(protocolVersion, serviceAccessPoint, serverPort);
     } 
 }

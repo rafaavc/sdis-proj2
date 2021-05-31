@@ -111,8 +111,7 @@ def run_peer(peerId, first=False, firstServerPort=-1):
     runArgs = [
         "java",
         "Main",
-        args.v, 
-        str(peerId),
+        args.v,
         "peer"+str(peerId),
         str(get_server_port(peerId))
     ]

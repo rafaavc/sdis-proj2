@@ -14,7 +14,6 @@ public class ArgsException extends Exception {
         FILE_DOESNT_EXIST,
         MESSAGE_TYPE,
         UNKNOWN_VERSION_NO,
-        PEER_ID,
         SERVER_PORT,
         PREEXISTING_PEER_PORT,
         FILE_KEY,
@@ -31,7 +30,6 @@ public class ArgsException extends Exception {
         messages.put(Type.FILE_DOESNT_EXIST, "File doesn't exist.");
         messages.put(Type.MESSAGE_TYPE, "Message type not recognized.");
         messages.put(Type.UNKNOWN_VERSION_NO, "Unknown version number. Only know 1.0 (vanilla) and 1.1 (with enhancements).");
-        messages.put(Type.PEER_ID, "Invalid peer ID. Must be an integer.");
         messages.put(Type.FILE_KEY, "Invalid file key. Must be an integer.");
         messages.put(Type.SERVER_PORT, "Invalid server port. Must be a positive integer.");
         messages.put(Type.PREEXISTING_PEER_PORT, "Invalid preexisting peer port. Must be a positive integer.");

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import chord.ChordNode;
 import messages.Message;
 
 public class Logger {
@@ -56,8 +57,17 @@ public class Logger {
     }
 
     public static void debug(DebugType debugType, String message) {
+        if (debugType == DebugType.CHORD) {
+            Logger.error("CHORD debug should go to Logger.debug(ChordNode node, String message)");
+            return;
+        }
         if (!active.contains(debugType)) return;
         System.out.println("[" + debugType + "] " + message);
+    }
+
+    public static void debug(ChordNode node, String message) {
+        if (!active.contains(DebugType.CHORD)) return;
+        System.out.println("[" + DebugType.CHORD + "@" + node.getId() + "] " + message);
     }
 
     public static void log(Object obj) {

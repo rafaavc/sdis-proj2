@@ -9,6 +9,9 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
+/**
+ * This class assures that writes are sequential
+ */
 public class MessageQueue {
     private final ConcurrentLinkedQueue<MessageAction> queue = new ConcurrentLinkedQueue<>();
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -32,10 +35,6 @@ public class MessageQueue {
         Logger.debug(Logger.DebugType.QUEUE, "Sweep complete!");
     }
 
-    public void push(InetSocketAddress address, Message message) throws Exception {
-        push(address, message, null);
-    }
-
     public void push(InetSocketAddress address, Message message, Consumer<Message> onComplete) throws Exception {
         SSLClient client = new SSLClient(address.getAddress().getHostAddress(), address.getPort());
         client.connect();
@@ -50,11 +49,12 @@ public class MessageQueue {
         }, onComplete != null));
     }
 
-    public void destroy() throws InterruptedException {
-        if (!executor.awaitTermination(2, TimeUnit.SECONDS))
+    public void destroy() {
+        try {
+            if (!executor.awaitTermination(2, TimeUnit.SECONDS))
+                executor.shutdown();
+        } catch (InterruptedException e) {
             executor.shutdown();
+        }
     }
-
-
-
 }

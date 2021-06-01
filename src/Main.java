@@ -30,7 +30,9 @@ public class Main {
                 Logger.log("Closing SSL server and unbinding from registry..."); 
 
                 configuration.getServer().stop();
-                
+
+                SSLClient.queue.destroy();
+
                 try {
                     if (!configuration.getThreadScheduler().awaitTermination(3, TimeUnit.SECONDS))
                         throw new Exception();

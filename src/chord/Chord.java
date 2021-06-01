@@ -66,7 +66,7 @@ public class Chord {
                     updateFingers();
                 } catch(Exception e) {
                     Logger.error(e, true);
-                    Logger.debug(DebugType.CHORD, "Got exception in update fingers! " + e.getMessage());
+                    Logger.debug(self, "Got exception in update fingers! " + e.getMessage());
                 }
             }, configuration.getRandomDelay(1000, 100), 250, TimeUnit.MILLISECONDS);
 
@@ -75,7 +75,7 @@ public class Chord {
                     stabilize();
                 } catch(Exception e) {
                     Logger.error(e, true);
-                    Logger.debug(DebugType.CHORD, "Got exception in stabilize! " + e.getMessage());
+                    Logger.debug(self, "Got exception in stabilize! " + e.getMessage());
                 }
             }, configuration.getRandomDelay(1000, 100), 250, TimeUnit.MILLISECONDS);
 
@@ -132,8 +132,12 @@ public class Chord {
         return predecessor;
     }
 
+    public ChordNode getSelf() {
+        return self;
+    }
+
     private void create() {
-        Logger.debug(DebugType.CHORD, "I am GOD: " + self);
+        Logger.debug(self, "I am GOD: " + self);
 
         this.predecessor = null;
         successor = self;
@@ -145,7 +149,7 @@ public class Chord {
         // send LOOKUP message to the preexisting node
         // and set the successor to the value of the return
         successor = this.lookup(preexistingNode, self.getId()).get();
-        Logger.debug(DebugType.CHORD, "Joining chord ring. My successor is " + successor);
+        Logger.debug(self, "Joining chord ring. My successor is " + successor);
     }
 
     public int getFingerTableIndexId(int idx) {
@@ -179,7 +183,7 @@ public class Chord {
      * @throws Exception
      */
     public void updateFingers() throws Exception {
-//        Logger.debug(DebugType.CHORD, "Update fingers");
+//        Logger.debug(self, "Update fingers");
 
         nextFingerToFix = nextFingerToFix + 1;
         if (nextFingerToFix > this.m - 1) nextFingerToFix = 0;
@@ -207,7 +211,7 @@ public class Chord {
                 throw new Exception("updateFingers: finger table was not valid.");
             }
         }
-//        Logger.debug(DebugType.CHORD, "Update fingers ended");
+//        Logger.debug(self, "Update fingers ended");
     }
 
     /**
@@ -215,26 +219,26 @@ public class Chord {
      * Verifies if the predecessor of the node's successor is still the node itself
      */
     public void stabilize() throws Exception {
-        Logger.debug(DebugType.CHORD, "Stabilize");
+        Logger.debug(self, "Stabilize");
 
         if (successor.getId() == getId()) return;
 
-        Logger.debug(DebugType.CHORD, "Sending GETPREDECESSOR to " + successor);
+        Logger.debug(self, "Sending GETPREDECESSOR to " + successor);
         Message reply = SSLClient.sendQueued(configuration, successor.getInetSocketAddress(), messageFactory.getGetPredecessorMessage(self.getId()), true).get();
 
         try {
             ChordNode predecessorOfSuccessor = reply.getNode();  // if it has no predecessor it will throw exception
-            Logger.debug(DebugType.CHORD, "Got PREDECESSOR = " + predecessorOfSuccessor);
+            Logger.debug(self, "Got PREDECESSOR = " + predecessorOfSuccessor);
             
             if (isBetween(predecessorOfSuccessor, self, successor, false)) {
                 successor = predecessorOfSuccessor;
             }
         } catch (Exception e) {
-            Logger.debug(DebugType.CHORD, "Didn't have predecessor yet!");
+            Logger.debug(self, "Didn't have predecessor yet!");
         }
 
         notifyPredecessor(successor);
-        Logger.debug(DebugType.CHORD, "Stabilize ended");
+        Logger.debug(self, "Stabilize ended");
     }
 
     /** 
@@ -242,7 +246,7 @@ public class Chord {
      * @param successor the node's successor
     */
     public void notifyPredecessor(ChordNode successor) throws Exception {
-        Logger.debug(DebugType.CHORD, "Sending NOTIFY to successor " + successor);
+        Logger.debug(self, "Sending NOTIFY to successor " + successor);
 
         SSLClient.sendQueued(configuration, successor.getInetSocketAddress(), messageFactory.getNotifyMessage(self.getId(), self), false);
     }
@@ -260,11 +264,11 @@ public class Chord {
      * @param newPredecessor the node's predecessor
      */
     public void notify(ChordNode newPredecessor) {
-        Logger.debug(DebugType.CHORD, "Received NOTIFY" + newPredecessor);
+        Logger.debug(self, "Received NOTIFY" + newPredecessor);
         // if doesn't have predecessor or the current predecessor is no longer valid
         if (predecessor == null || isBetween(newPredecessor.getId(), predecessor.getId(), self.getId(), false)) 
         {
-            Logger.debug(DebugType.CHORD, "Changed predecessor to " + newPredecessor.toString());
+            Logger.debug(self, "Changed predecessor to " + newPredecessor.toString());
             predecessor = newPredecessor;
         }
 
@@ -276,14 +280,14 @@ public class Chord {
      */
     public void checkPredecessor() {
         if (predecessor == null) return;
-        Logger.log("Checking predecessor...");
+        Logger.debug(self, "Checking predecessor...");
         
         if (!SSLPeer.isAlive(predecessor.getInetSocketAddress()))
         {
             predecessor = null;
-            Logger.log("Predecessor was not alive!");
+            Logger.debug(self, "Predecessor was not alive!");
         }
-        else Logger.log("Predecessor was alive!");
+        else Logger.debug(self, "Predecessor was alive!");
     }
 
     /**
@@ -323,19 +327,19 @@ public class Chord {
             return future;
         }
 
-        Logger.debug(DebugType.CHORD, "Looking up key " + k + " to peer " + closestPreceding.getId());
+        Logger.debug(self, "Looking up key " + k + " to peer " + closestPreceding.getId());
         return lookup(closestPreceding.getInetSocketAddress(), k);
     }
 
     public Future<ChordNode> lookup(InetSocketAddress peerAddress, int k, int id) throws Exception {
-        Logger.debug(DebugType.CHORD, "Using " + peerAddress.getAddress().getHostAddress() + ":" + peerAddress.getPort() + " to LOOKUP!");
+        Logger.debug(self, "Using " + peerAddress.getAddress().getHostAddress() + ":" + peerAddress.getPort() + " to LOOKUP!");
 
         CompletableFuture<ChordNode> future = new CompletableFuture<>();
         Message message = messageFactory.getLookupMessage(id, k);
 
         int ntries = 0;
         while ((ntries < 3 || id != 1234) && !future.isDone()) { // only sends exception when the id is 1234
-            Logger.debug(DebugType.CHORD, "Sending LOOKUP of key " + k + " to " + peerAddress.toString());
+            Logger.debug(self, "Sending LOOKUP of key " + k + " to " + peerAddress.toString());
 
             Future<Message> f = SSLClient.sendQueued(configuration, peerAddress, message, true);
             try {
@@ -367,10 +371,6 @@ public class Chord {
         }
         builder.append("----------------------------------------------\n\n");
         return builder.toString();
-    }
-
-    public void printFingerTable() {
-        Logger.log(toString());
     }
 }
 

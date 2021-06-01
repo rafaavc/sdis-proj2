@@ -79,7 +79,7 @@ public class Chord {
                 }
             }, configuration.getRandomDelay(1000, 100), 250, TimeUnit.MILLISECONDS);
 
-//            configuration.getThreadScheduler().scheduleWithFixedDelay(this::checkPredecessor, 500, 2000, TimeUnit.MILLISECONDS);
+            configuration.getThreadScheduler().scheduleWithFixedDelay(this::checkPredecessor, 500, 2000, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -276,14 +276,14 @@ public class Chord {
      */
     public void checkPredecessor() {
         if (predecessor == null) return;
-        Logger.debug(DebugType.CHORD, "Checking predecessor...");
+        Logger.log("Checking predecessor...");
         
         if (!SSLPeer.isAlive(predecessor.getInetSocketAddress()))
         {
             predecessor = null;
-            Logger.debug(DebugType.CHORD, "Predecessor was not alive!");
+            Logger.log("Predecessor was not alive!");
         }
-        else Logger.debug(DebugType.CHORD, "Predecessor was alive!");
+        else Logger.log("Predecessor was alive!");
     }
 
     /**

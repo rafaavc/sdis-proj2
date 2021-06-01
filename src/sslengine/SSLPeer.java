@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.KeyStore;
@@ -30,27 +31,10 @@ public abstract class SSLPeer {
     }
 
     public static boolean isAlive(InetSocketAddress address) {
-        try {
-            SocketChannel socket = SocketChannel.open();
-            socket.socket().connect(address, 1000);
-
-            SSLContext context = SSLContext.getInstance("TLS");
-            initContext(context);
-
-            SSLEngine engine = context.createSSLEngine(address.getAddress().getHostAddress(), address.getPort());
-            engine.setUseClientMode(true);
-
-            engine.beginHandshake();
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executeHandshake(executor, socket, engine);
-
-            closeConnection(executor, socket, engine);
-            executor.shutdown();
-
+        try (Socket ignored = new Socket(address.getAddress().getHostAddress(), address.getPort())) {
             return true;
-        } catch(Exception e) {
-            return false;
-        }
+        } catch (Exception ignored) {}
+        return false;
     }
     
     public void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
@@ -169,7 +153,7 @@ public abstract class SSLPeer {
                         try {
                             engine.closeInbound();
                         } catch(Exception e) {
-                            Logger.error("closing inbound during handshake", e, true);
+//                            Logger.error("closing inbound during handshake", e, true);
                         }
 
                         engine.closeOutbound();

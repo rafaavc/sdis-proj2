@@ -81,7 +81,7 @@ public class MessageParser {
             message.setMessageType(type);
             
             switch (type) {
-                case GETPREDECESSOR: break;
+                case GETPREDECESSOR: case PROCESSED: break;
 
                 case NOTIFY: case PREDECESSOR:
                     if (type == MessageType.PREDECESSOR && headerPieces.length < 5) break;  // the successor doesn't have a predecessor

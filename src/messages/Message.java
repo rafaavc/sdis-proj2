@@ -32,7 +32,8 @@ public class Message {
         GETPREDECESSOR,
         PREDECESSOR,
         NOTIFY,
-        DATA
+        DATA,
+        PROCESSED
     }
 
     private static final String CRLF = new String(new byte[] { 0xD, 0xA });
@@ -52,6 +53,7 @@ public class Message {
         messageTypeStrings.put(MessageType.PREDECESSOR, "PREDECESSOR");
         messageTypeStrings.put(MessageType.NOTIFY, "NOTIFY");
         messageTypeStrings.put(MessageType.DATA, "DATA");
+        messageTypeStrings.put(MessageType.PROCESSED, "PROCESSED");
     }
 
     public Message(int senderId, Integer fileKey) {

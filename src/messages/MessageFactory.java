@@ -44,6 +44,10 @@ public class MessageFactory {
                                 body);
     }
 
+    public static Message getProcessedMessage(int senderId) {
+        return new Message(MessageType.PROCESSED, senderId);
+    }
+
     public static byte[] getStoredMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
         Message msg = new Message(MessageType.STORED,
                                     senderId,

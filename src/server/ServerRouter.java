@@ -60,7 +60,8 @@ public class ServerRouter implements Router {
                         e.printStackTrace();
                     }
                 }));
-                response = MessageFactory.getGetPredecessorMessage(1).getBytes();
+
+                response = MessageFactory.getProcessedMessage(configuration.getPeerId()).getBytes();
                 break;
 
             case DATA:

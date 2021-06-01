@@ -50,7 +50,7 @@ public abstract class SSLPeer {
 
             int amount = Math.min(appData.remaining(), message.length - totalAmount);
 
-            Logger.log("appData remaining = " + appData.remaining() + "sending " + amount + " bytes (" + (totalAmount + amount) + "/" + message.length + ")");
+//            Logger.log("appData remaining = " + appData.remaining() + "sending " + amount + " bytes (" + (totalAmount + amount) + "/" + message.length + ")");
 
             appData.put(message, totalAmount, amount);
             appData.flip();
@@ -103,7 +103,7 @@ public abstract class SSLPeer {
         synchronized (unwrapLock) {
             bytesRead = socket.read(peerNetData);
 
-            Logger.log("Read " + bytesRead + " bytes");
+//            Logger.log("Read " + bytesRead + " bytes");
 
             if (bytesRead > 0) {
                 peerNetData.flip();

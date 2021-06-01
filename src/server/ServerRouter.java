@@ -1,5 +1,6 @@
 package server;
 
+import java.io.IOException;
 import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLEngine;
@@ -7,6 +8,7 @@ import javax.net.ssl.SSLEngine;
 import chord.ChordNode;
 import configuration.PeerConfiguration;
 import exceptions.ArgsException;
+import files.FileManager;
 import messages.Message;
 import messages.MessageFactory;
 import messages.MessageParser;
@@ -16,6 +18,7 @@ import utils.Logger.DebugType;
 public class ServerRouter implements Router {
     
     private final PeerConfiguration configuration;
+    private final DataBucket dataBucket = new DataBucket();
 
     public ServerRouter(PeerConfiguration configuration) throws ArgsException {
         this.configuration = configuration;
@@ -47,6 +50,25 @@ public class ServerRouter implements Router {
                 Logger.debug(configuration.getChord().getSelf(), "Received NOTIFY");
                 configuration.getChord().notify(message.getNode());
                 break;
+
+            case PUTFILE:
+                Logger.debug(DebugType.BACKUP, "Received PUTFILE: " + message);
+                dataBucket.add(message.getFileKey(), new FileBucket(message.getOrder(), (byte[] data) -> {
+                    try {
+                        new FileManager().write("test.jpeg", data);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }));
+                response = MessageFactory.getGetPredecessorMessage(1).getBytes();
+                break;
+
+            case DATA:
+                Logger.debug(DebugType.BACKUP, "Received DATA: " + message);
+
+                dataBucket.add(message.getFileKey(), message.getOrder(), message.getBody());
+                break;
+
 
             default:
                 Logger.log("Received " + message.getMessageType());

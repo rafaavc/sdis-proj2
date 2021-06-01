@@ -40,38 +40,53 @@ public abstract class SSLPeer {
     public void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
         Logger.debug(DebugType.SSL, "Going to write to the client...");
 
-        ByteBuffer appData = ByteBuffer.wrap(message);
+        ByteBuffer appData = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize());
         ByteBuffer netData = ByteBuffer.allocate(engine.getSession().getPacketBufferSize());
 
-        while (appData.hasRemaining()) {
-            netData.clear();
-            synchronized(wrapLock) {
-                SSLEngineResult result = engine.wrap(appData, netData);
+        int totalAmount = 0;
+        while (totalAmount < message.length)
+        {
+            appData.clear();
 
-                switch (result.getStatus()) {
-                    case OK:
-                        netData.flip();
+            int amount = Math.min(appData.remaining(), message.length - totalAmount);
 
-                        while (netData.hasRemaining())
-                            socket.write(netData);
+            Logger.log("appData remaining = " + appData.remaining() + "sending " + amount + " bytes (" + (totalAmount + amount) + "/" + message.length + ")");
 
-                        Logger.debug(DebugType.SSL, "Sent to the client " + new String(message));
-                        
-                        break;
+            appData.put(message, totalAmount, amount);
+            appData.flip();
 
-                    case CLOSED:
-                        this.closeConnection(socket, engine);
-                        return;
+            totalAmount += amount;
 
-                    case BUFFER_UNDERFLOW:
-                        throw new SSLException("Buffer underflow occurred after a wrap.");
+            while (appData.hasRemaining()) {
+                netData.clear();
+                synchronized (wrapLock) {
+                    SSLEngineResult result = engine.wrap(appData, netData);
 
-                    case BUFFER_OVERFLOW:
-                        netData = increaseBufferSize(netData, engine.getSession().getPacketBufferSize());
-                        break;
+                    switch (result.getStatus()) {
+                        case OK:
+                            netData.flip();
 
-                    default:
-                        throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
+                            while (netData.hasRemaining())
+                                socket.write(netData);
+
+                            Logger.debug(DebugType.SSL, "Sent to the client " + new String(message));
+
+                            break;
+
+                        case CLOSED:
+                            this.closeConnection(socket, engine);
+                            return;
+
+                        case BUFFER_UNDERFLOW:
+                            throw new SSLException("Buffer underflow occurred after a wrap.");
+
+                        case BUFFER_OVERFLOW:
+                            netData = increaseBufferSize(netData, engine.getSession().getPacketBufferSize());
+                            break;
+
+                        default:
+                            throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
+                    }
                 }
             }
         }
@@ -81,12 +96,14 @@ public abstract class SSLPeer {
         Logger.debug(DebugType.SSL, "Going to read...");
 
         ByteBuffer peerAppData = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize()),
-            peerNetData = ByteBuffer.allocate(engine.getSession().getPacketBufferSize());
+            peerNetData = ByteBuffer.allocate(engine.getSession().getPacketBufferSize() * 2);
 
         int bytesRead = -1;
 
-        synchronized(unwrapLock) {
+        synchronized (unwrapLock) {
             bytesRead = socket.read(peerNetData);
+
+            Logger.log("Read " + bytesRead + " bytes");
 
             if (bytesRead > 0) {
                 peerNetData.flip();
@@ -94,10 +111,11 @@ public abstract class SSLPeer {
                 while (peerNetData.hasRemaining()) {
                     peerAppData.clear(); // ??
                     SSLEngineResult result = engine.unwrap(peerNetData, peerAppData);
+
                     switch (result.getStatus()) {
                         case OK:
                             peerAppData.flip(); // ??
-                            // if (read) read = false;
+                            bytesRead = result.bytesProduced();
                             break;
 
                         case CLOSED:
@@ -116,8 +134,7 @@ public abstract class SSLPeer {
                             throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
                     }
                 }
-            }
-            else if (bytesRead < 0) {
+            } else if (bytesRead < 0) {
                 this.processEndOfStream(socket, engine);
                 return new ReadResult(bytesRead, peerAppData);
             }

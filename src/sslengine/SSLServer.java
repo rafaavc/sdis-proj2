@@ -120,6 +120,7 @@ public class SSLServer extends SSLPeer {
                                         try {
                                             message = MessageParser.parse(msg.getData().array(), msg.getBytesRead());
                                         } catch(Exception e) {
+                                            Logger.error("Couldn't parse message!");
                                             return;
                                         }
                                         

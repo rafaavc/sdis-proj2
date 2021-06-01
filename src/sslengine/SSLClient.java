@@ -35,7 +35,7 @@ public class SSLClient extends SSLPeer{
     }
 
     public SSLClient(String address, int port) throws Exception {
-        this("TLS", address, port);
+        this("TLSv1.2", address, port);
     }
 
     public SSLClient(String protocol, String address, int port) throws Exception {

@@ -28,12 +28,20 @@ public class MessageFactory {
         return new Message(MessageType.NOTIFY, senderId, node);
     }
 
-    public static Message getPutfileMessage(int senderId, int fileKey, int replicationDeg, byte[] body) throws ArgsException {
+    public static Message getPutfileMessage(int senderId, int fileKey, int nParts, int replicationDeg) throws ArgsException {
         return new Message(MessageType.PUTFILE,
                             senderId,
                             fileKey,
-                            replicationDeg,
-                            body);
+                            nParts,
+                            replicationDeg);
+    }
+
+    public static Message getDataMessage(int senderId, int fileKey, int order, byte[] body) {
+        return new Message(MessageType.DATA,
+                                senderId,
+                                fileKey,
+                                order,
+                                body);
     }
 
     public static byte[] getStoredMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {

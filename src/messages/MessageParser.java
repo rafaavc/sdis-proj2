@@ -45,28 +45,29 @@ public class MessageParser {
             switch(type)
             {
                 case PUTFILE:
-                    message.setReplicationDeg((short) Integer.parseInt(headerPieces[3]));
+                    message.setOrder(Integer.parseInt(headerPieces[3]));
+                    message.setReplicationDeg((short) Integer.parseInt(headerPieces[4]));
 
                     byte[] body = Arrays.copyOfRange(data, bodyStart, length);
                     message.setBody(body);
                     break;
 
-                case STORED: case REMOVED: case GETFILE:
-                    message.setChunkNo(Integer.parseInt(headerPieces[3]));
+                case DATA:
+                    message.setOrder(Integer.parseInt(headerPieces[3]));
+                    byte[] chunkBodyData = Arrays.copyOfRange(data, bodyStart, length);
+                    message.setBody(chunkBodyData);
+                    break;
+
+                case STORED: case REMOVED: case GETFILE: case DELETE: case LOOKUP: case FILECHECK:
                     break;
 
                 case CHUNK:
-                    message.setChunkNo(Integer.parseInt(headerPieces[3]));
-
                     byte[] chunkBody = Arrays.copyOfRange(data, bodyStart, length);
                     message.setBody(chunkBody);
                     break;
 
                 case LOOKUPRESPONSE:
                     message.setNode(headerPieces[3], IntParser.parse(headerPieces[4]), IntParser.parse(headerPieces[5]));
-                    break;
-
-                case DELETE: case LOOKUP: case FILECHECK:
                     break;
 
                 default:
@@ -97,7 +98,7 @@ public class MessageParser {
     }
 
     public static boolean needsFileKey(MessageType type) {
-        return type == MessageType.CHUNK || type == MessageType.DELETE || type == MessageType.REMOVED 
+        return type == MessageType.CHUNK || type == MessageType.DELETE || type == MessageType.REMOVED || type == MessageType.DATA
             || type == MessageType.PUTFILE || type == MessageType.STORED || type == MessageType.LOOKUP || type == MessageType.FILECHECK || type == MessageType.GETFILE || type == MessageType.LOOKUPRESPONSE;
     }
 

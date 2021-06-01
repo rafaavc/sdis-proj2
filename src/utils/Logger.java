@@ -13,7 +13,8 @@ public class Logger {
         MESSAGE,
         CHORD,
         QUEUE,
-        BACKUP
+        BACKUP,
+        FILEBUCKET
     }
 
     private static final List<DebugType> active = new ArrayList<>();
@@ -23,6 +24,7 @@ public class Logger {
 //        setActive(DebugType.CHORD);
 //        setActive(DebugType.QUEUE);
         setActive(DebugType.BACKUP);
+        setActive(DebugType.FILEBUCKET);
 
     }
 

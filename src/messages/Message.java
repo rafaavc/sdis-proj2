@@ -14,8 +14,8 @@ public class Message {
     private final Integer fileKey;
     private ChordNode node = null;
     private MessageType messageType;
-    private int chunkNo = -1;
     private short replicationDeg = -1;
+    private int order = -1;
 
     private byte[] body = null;
 
@@ -31,7 +31,8 @@ public class Message {
         LOOKUPRESPONSE,
         GETPREDECESSOR,
         PREDECESSOR,
-        NOTIFY
+        NOTIFY,
+        DATA
     }
 
     private static final String CRLF = new String(new byte[] { 0xD, 0xA });
@@ -50,6 +51,7 @@ public class Message {
         messageTypeStrings.put(MessageType.GETPREDECESSOR, "GETPREDECESSOR");
         messageTypeStrings.put(MessageType.PREDECESSOR, "PREDECESSOR");
         messageTypeStrings.put(MessageType.NOTIFY, "NOTIFY");
+        messageTypeStrings.put(MessageType.DATA, "DATA");
     }
 
     public Message(int senderId, Integer fileKey) {
@@ -83,33 +85,28 @@ public class Message {
         this.messageType = messageType;
     }
 
-    public Message(MessageType messageType, int senderId, int fileKey, int chunkNo) {
+    public Message(MessageType messageType, int senderId, int fileKey, int replicationDeg) {
         this(messageType, senderId, fileKey);
-        this.chunkNo = chunkNo;
-    }
-
-    public Message(MessageType messageType, int senderId, int fileKey, int chunkNo, int replicationDeg) {
-        this(messageType, senderId, fileKey, chunkNo);
         this.replicationDeg = (short) replicationDeg;
     }
 
-    public Message(MessageType messageType, int senderId, int fileKey, int chunkNo, byte[] body) {
-        this(messageType, senderId, fileKey, chunkNo);
+    public Message(MessageType messageType, int senderId, int fileKey, int replicationDegree, byte[] body) {
+        this(messageType, senderId, fileKey, replicationDegree);
         this.body = body;
     }
 
-    public Message(MessageType messageType, int senderId, int fileKey, int chunkNo, int replicationDeg, byte[] body) {
-        this(messageType, senderId, fileKey, chunkNo, replicationDeg);
-        this.body = body;
-    }
-
-    public Message setChunkNo(int chunkNo) {
-        this.chunkNo = chunkNo;
-        return this;
+    public Message(MessageType messageType, int senderId, int fileKey, int nParts, int replicationDegree) {
+        this(messageType, senderId, fileKey, replicationDegree);
+        this.order = nParts;
     }
 
     public Message setNode(String address, int port, int nodeId) throws UnknownHostException {
         this.node = new ChordNode(new InetSocketAddress(InetAddress.getByName(address), port), nodeId);
+        return this;
+    }
+
+    public Message setOrder(int order) {
+        this.order = order;
         return this;
     }
 
@@ -155,14 +152,14 @@ public class Message {
         return node;
     }
 
-    public int getChunkNo() throws Exception {
-        if (this.chunkNo < 0) throw new Exception("Trying to access chunkNo of message without this field.");
-        return chunkNo;
-    }
-
     public short getReplicationDeg() throws Exception {
         if (this.replicationDeg < 0) throw new Exception("Trying to access chunkNo of message without this field.");
         return replicationDeg;
+    }
+
+    public int getOrder() throws Exception {
+        if (this.order < 0) throw new Exception("Trying to access order of message without this field.");
+        return order;
     }
 
     @Override
@@ -173,9 +170,10 @@ public class Message {
         builder.append("Message:");
 
         for (String component : headerComponents) {
-            builder.append(' ');
-            builder.append(component);
+            builder.append(' ').append(component);
         }
+
+        if (body != null) builder.append(" (body=").append(body.length).append("B)");
 
         return builder.toString();
     }
@@ -185,7 +183,7 @@ public class Message {
         components.add(messageTypeStrings.get(messageType));
         components.add(String.valueOf(senderId));
         if (fileKey != null) components.add(String.valueOf(fileKey));
-        if (chunkNo != -1) components.add(String.valueOf(chunkNo));
+        if (order != -1) components.add(String.valueOf(order));
         if (replicationDeg != -1) components.add(String.valueOf(replicationDeg));
         if (node != null) {
             components.add(node.getInetAddress().getHostAddress());

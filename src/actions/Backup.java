@@ -1,6 +1,7 @@
 package actions;
 
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
@@ -35,11 +36,33 @@ public class Backup implements Action {
 
             Future<ChordNode> destinationNode = configuration.getChord().lookup(info.getFileKey());
 
-            Message message = MessageFactory.getPutfileMessage(configuration.getPeerId(), file.getFileKey(), desiredReplicationDegree, file.getData());
+            Message message = MessageFactory.getPutfileMessage(configuration.getPeerId(), file.getFileKey(), (int) Math.ceil(file.getData().length / 15000.), desiredReplicationDegree);
+            Logger.debug(Logger.DebugType.BACKUP, "Sending " + message);
             configuration.getPeerState().addFile(info);
 
             Future<Message> reply = SSLClient.sendQueued(configuration, destinationNode.get().getInetSocketAddress(), message, true);
-            Logger.debug(Logger.DebugType.BACKUP, "Got reply = " + reply);
+            Logger.debug(Logger.DebugType.BACKUP, "Got reply = " + reply.get());
+
+
+            Logger.debug(Logger.DebugType.BACKUP, "Sending parts...");
+            int totalAmount = 0, order = 1;
+            while (totalAmount != file.getData().length)
+            {
+                int left = file.getData().length - totalAmount;
+
+                int amount = Math.min(left, 15000);
+                byte[] part = new byte[amount];
+
+                System.arraycopy(file.getData(), totalAmount, part, 0, amount);
+
+                Message dataMessage = MessageFactory.getDataMessage(configuration.getPeerId(), file.getFileKey(), order, part);
+                SSLClient.sendQueued(configuration, destinationNode.get().getInetSocketAddress(), dataMessage, false);
+
+                totalAmount += amount;
+                order++;
+            }
+
+            Logger.debug(Logger.DebugType.BACKUP, "Sent all parts!");
 
         } catch(Exception e) {
             Logger.error(e, future);

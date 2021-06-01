@@ -13,11 +13,11 @@ public class Logger {
         CHORD
     }
 
-    private static List<DebugType> active = new ArrayList<>();
+    private static final List<DebugType> active = new ArrayList<>();
     static {
-        // setActive(DebugType.SSL);
-        // setActive(DebugType.MESSAGE);
-        // setActive(DebugType.CHORD);
+//        setActive(DebugType.SSL);
+//        setActive(DebugType.MESSAGE);
+//        setActive(DebugType.CHORD);
     }
 
     public static void setActive(DebugType type) {

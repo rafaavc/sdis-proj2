@@ -7,10 +7,12 @@ import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -19,12 +21,36 @@ public abstract class SSLPeer {
     /* Executor for handshake tasks */
     protected ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    private Object wrapLock = new Object(), unwrapLock = new Object();
+    private final Object wrapLock = new Object(), unwrapLock = new Object();
 
-    protected void initContext(SSLContext context) throws Exception {
+    protected static void initContext(SSLContext context) throws Exception {
         context.init(createKeyManagers("../sslengine/keys/client.jks", "123456", "123456"), 
             createTrustManagers("../sslengine/keys/truststore.jks", "123456"), 
             new SecureRandom());
+    }
+
+    public static boolean isAlive(InetSocketAddress address) {
+        try {
+            SocketChannel socket = SocketChannel.open();
+            socket.socket().connect(address, 1000);
+
+            SSLContext context = SSLContext.getInstance("TLS");
+            initContext(context);
+
+            SSLEngine engine = context.createSSLEngine(address.getAddress().getHostAddress(), address.getPort());
+            engine.setUseClientMode(true);
+
+            engine.beginHandshake();
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executeHandshake(executor, socket, engine);
+
+            closeConnection(executor, socket, engine);
+            executor.shutdown();
+
+            return true;
+        } catch(Exception e) {
+            return false;
+        }
     }
     
     public void write(SocketChannel socket, SSLEngine engine, byte[] message) throws Exception {
@@ -57,7 +83,7 @@ public abstract class SSLPeer {
                         throw new SSLException("Buffer underflow occurred after a wrap.");
 
                     case BUFFER_OVERFLOW:
-                        netData = this.increaseBufferSize(netData, engine.getSession().getPacketBufferSize());
+                        netData = increaseBufferSize(netData, engine.getSession().getPacketBufferSize());
                         break;
 
                     default:
@@ -95,11 +121,11 @@ public abstract class SSLPeer {
                             return new ReadResult(bytesRead, peerAppData);
 
                         case BUFFER_UNDERFLOW:
-                            peerNetData = this.processBufferUnderflow(engine, peerNetData);
+                            peerNetData = processBufferUnderflow(engine, peerNetData);
                             break;
 
                         case BUFFER_OVERFLOW:
-                            peerAppData = this.increaseBufferSize(peerAppData, engine.getSession().getApplicationBufferSize());
+                            peerAppData = increaseBufferSize(peerAppData, engine.getSession().getApplicationBufferSize());
                             break;
 
                         default:
@@ -118,6 +144,10 @@ public abstract class SSLPeer {
     }
 
     protected boolean executeHandshake(SocketChannel socketChannel, SSLEngine engine) throws IOException {
+        return executeHandshake(executor, socketChannel, engine);
+    }
+
+    protected static boolean executeHandshake(Executor executor, SocketChannel socketChannel, SSLEngine engine) throws IOException {
 
         Logger.debug(DebugType.SSL, "Starting handshake");
         
@@ -154,7 +184,7 @@ public abstract class SSLPeer {
                     }
                     catch (SSLException exception){
                         Logger.error("unwrapping during handshake", exception, true);
-                        
+
                         engine.closeOutbound();
                         status = engine.getHandshakeStatus();
                         break;
@@ -173,11 +203,11 @@ public abstract class SSLPeer {
                             }
 
                         case BUFFER_OVERFLOW:
-                            peerAppData = this.increaseBufferSize(peerAppData, engine.getSession().getApplicationBufferSize());
+                            peerAppData = increaseBufferSize(peerAppData, engine.getSession().getApplicationBufferSize());
                             break;
 
                         case BUFFER_UNDERFLOW:
-                            peerNetData = this.processBufferUnderflow(engine, peerNetData);
+                            peerNetData = processBufferUnderflow(engine, peerNetData);
                             break;
 
                         default:
@@ -224,9 +254,9 @@ public abstract class SSLPeer {
 
                         case BUFFER_UNDERFLOW:
                             throw new SSLException("Buffer underflow occurred after a wrap.");
-                        
+
                         case BUFFER_OVERFLOW:
-                            netData = this.increaseBufferSize(netData, engine.getSession().getPacketBufferSize());
+                            netData = increaseBufferSize(netData, engine.getSession().getPacketBufferSize());
                             break;
 
                         default:
@@ -242,9 +272,6 @@ public abstract class SSLPeer {
                     status = engine.getHandshakeStatus();
                     break;
 
-                case FINISHED:
-                case NOT_HANDSHAKING:
-                    break;
                 default:
                     throw new IllegalStateException("Invalid SSL status: " + status);
             }
@@ -256,7 +283,7 @@ public abstract class SSLPeer {
     }
 
 
-    protected ByteBuffer increaseBufferSize(ByteBuffer buffer, int capacity) {
+    protected static ByteBuffer increaseBufferSize(ByteBuffer buffer, int capacity) {
         if (capacity > buffer.capacity()) {
             buffer = ByteBuffer.allocate(capacity);
         } else {
@@ -265,20 +292,24 @@ public abstract class SSLPeer {
         return buffer;
     }
 
-    protected ByteBuffer processBufferUnderflow(SSLEngine engine, ByteBuffer buffer) {
+    protected static ByteBuffer processBufferUnderflow(SSLEngine engine, ByteBuffer buffer) {
         if (engine.getSession().getPacketBufferSize() < buffer.limit()) {
             return buffer;
         } else {
-            ByteBuffer replaceBuffer = this.increaseBufferSize(buffer, engine.getSession().getPacketBufferSize());
+            ByteBuffer replaceBuffer = increaseBufferSize(buffer, engine.getSession().getPacketBufferSize());
             buffer.flip();
             replaceBuffer.put(buffer);
             return replaceBuffer;
         }
     }
 
-    protected void closeConnection(SocketChannel socketChannel, SSLEngine engine) throws IOException  {
+    protected void closeConnection(SocketChannel socketChannel, SSLEngine engine) throws IOException {
+        closeConnection(executor, socketChannel, engine);
+    }
+
+    protected static void closeConnection(Executor executor, SocketChannel socketChannel, SSLEngine engine) throws IOException  {
         engine.closeOutbound();
-        executeHandshake(socketChannel, engine);
+        executeHandshake(executor, socketChannel, engine);
         socketChannel.close();
     }
 
@@ -292,27 +323,20 @@ public abstract class SSLPeer {
         closeConnection(socketChannel, engine);
     }
 
-    protected KeyManager[] createKeyManagers(String filepath, String keystorePassword, String keyPassword) throws Exception {
+    protected static KeyManager[] createKeyManagers(String filepath, String keystorePassword, String keyPassword) throws Exception {
         KeyStore keyStore = KeyStore.getInstance("JKS");
-        InputStream keyStoreIS = new FileInputStream(filepath);
-        try {
+        try (InputStream keyStoreIS = new FileInputStream(filepath)) {
             keyStore.load(keyStoreIS, keystorePassword.toCharArray());
-        } finally {
-            keyStoreIS.close();
-
         }
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(keyStore, keyPassword.toCharArray());
         return kmf.getKeyManagers();
     }
 
-    protected TrustManager[] createTrustManagers(String filepath, String keystorePassword) throws Exception {
+    protected static TrustManager[] createTrustManagers(String filepath, String keystorePassword) throws Exception {
         KeyStore trustStore = KeyStore.getInstance("JKS");
-        InputStream trustStoreIS = new FileInputStream(filepath);
-        try {
+        try (InputStream trustStoreIS = new FileInputStream(filepath)) {
             trustStore.load(trustStoreIS, keystorePassword.toCharArray());
-        } finally {
-            trustStoreIS.close();
         }
         TrustManagerFactory trustFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustFactory.init(trustStore);

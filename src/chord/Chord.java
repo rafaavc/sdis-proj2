@@ -1,5 +1,6 @@
 package chord;
 
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
@@ -15,6 +16,7 @@ import configuration.PeerConfiguration;
 import messages.Message;
 import messages.MessageFactory;
 import sslengine.SSLClient;
+import sslengine.SSLPeer;
 
 import java.lang.Math;
 
@@ -33,8 +35,8 @@ public class Chord {
 
     /**
      * Instantiates the chord algorithm for this peer, making him join the P2P network
+     * @param configuration the configuration of the peer
      * @param peerAddress the address of the peer that this class is in respect to.
-     * @param port the port of the peer that this class is in respect to to.
      * @param preexistingNode the address of a peer that already belongs to the P2P network.
      * @throws Exception
      */
@@ -58,7 +60,8 @@ public class Chord {
             else this.join(preexistingNode);
         }
         
-        if (!turnoff) {
+        if (!turnoff)
+        {
             configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
                 try {
                     updateFingers();
@@ -67,6 +70,7 @@ public class Chord {
                     Logger.debug(DebugType.CHORD, "Got exception in update fingers! " + e.getMessage());
                 }
             }, configuration.getRandomDelay(1000, 100), 500, TimeUnit.MILLISECONDS);
+
             configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
                 try {
                     stabilize();
@@ -75,13 +79,8 @@ public class Chord {
                     Logger.debug(DebugType.CHORD, "Got exception in stabilize! " + e.getMessage());
                 }
             }, configuration.getRandomDelay(1000, 100), 2000, TimeUnit.MILLISECONDS);
-            // configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
-            //     try {
-            //         checkPredecessor();
-            //     } catch(Exception e) {
-            //         Logger.error(e, true);
-            //     }
-            // }, 500, 300, TimeUnit.MILLISECONDS);
+
+            configuration.getThreadScheduler().scheduleWithFixedDelay(this::checkPredecessor, 500, 2000, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -156,9 +155,6 @@ public class Chord {
 
     /**
      * Checks if id is between the idLeft and idRight
-     * @param id
-     * @param idLeft
-     * @param idRight
      * @return whether id is after idLeft and before idRight in cordRing
      */
     public boolean isBetween(int id, int idLeft, int idRight, boolean inclusiveRight) {
@@ -257,7 +253,7 @@ public class Chord {
 
     /**
      * Updates the successor of the creator node if it is still the node itself
-     * @param successor
+     * @param node the successor
      */
     public void updateSuccessor(ChordNode node) {
         if (successor == self) successor = node;
@@ -265,7 +261,7 @@ public class Chord {
 
     /**
      * This node is being notified of its predecessor
-     * @param predecessor the node's predecessor
+     * @param newPredecessor the node's predecessor
      */
     public void notify(ChordNode newPredecessor) {
         Logger.debug(DebugType.CHORD, "Received NOTIFY" + newPredecessor);
@@ -282,13 +278,16 @@ public class Chord {
     /**
      * Checks whether predecessor has failed
      */
-    public void checkPredecessor() throws Exception {
+    public void checkPredecessor() {
         if (predecessor == null) return;
-
-        SSLClient client = new SSLClient(predecessor.getInetAddress().getHostAddress(), predecessor.getPort());
+        Logger.debug(DebugType.CHORD, "Checking predecessor...");
         
-        if (!client.connect()) predecessor = null;
-        else client.shutdown();
+        if (!SSLPeer.isAlive(predecessor.getInetSocketAddress()))
+        {
+            predecessor = null;
+            Logger.debug(DebugType.CHORD, "Predecessor was not alive!");
+        }
+        else Logger.debug(DebugType.CHORD, "Predecessor was alive!");
     }
 
     /**
@@ -339,7 +338,7 @@ public class Chord {
         Message message = messageFactory.getLookupMessage(id, k);
 
         int ntries = 0;
-        while (((ntries < 3 && id == 1234) || id != 1234) && !future.isDone()) { // only sends null when the id is 1234
+        while ((ntries < 3 || id != 1234) && !future.isDone()) { // only sends null when the id is 1234
             Logger.debug(DebugType.CHORD, "Sending LOOKUP of key " + k + " to " + peerAddress.toString());
 
             Future<Message> f = SSLClient.sendAndGetReply(configuration, peerAddress, message);
@@ -348,7 +347,6 @@ public class Chord {
                 future.complete(reply.getNode());
             } catch (ExecutionException e) {
                 ntries++;
-                continue;
             }
         }
 
@@ -364,12 +362,12 @@ public class Chord {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("\n----------------------------------------------\n");
-        builder.append("%% Finger table of node " + getId() + " %%\n");
-        builder.append("Predecessor = " + predecessor + "\n");
-        builder.append("Successor = " + successor + "\n");
+        builder.append("%% Finger table of node ").append(getId()).append(" %%\n");
+        builder.append("Predecessor = ").append(predecessor).append("\n");
+        builder.append("Successor = ").append(successor).append("\n");
         for (int i = 0; i < fingerTable.size(); i++) {
             ChordNode node = fingerTable.get(i);
-            builder.append(getFingerTableIndexId(i) + ": " + node.getId() + " | " + node.getInetSocketAddress().toString() + "\n");
+            builder.append(getFingerTableIndexId(i)).append(": ").append(node.getId()).append(" | ").append(node.getInetSocketAddress().toString()).append("\n");
         }
         builder.append("----------------------------------------------\n\n");
         return builder.toString();

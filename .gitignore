@@ -2,3 +2,5 @@
 .vscode
 build
 filesystem
+.idea
+*.iml

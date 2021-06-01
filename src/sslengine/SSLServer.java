@@ -28,17 +28,17 @@ public class SSLServer extends SSLPeer {
 
     private boolean available;
 
-    private SSLContext context;
+    private final SSLContext context;
 
-    private Selector selector;
+    private final Selector selector;
 
-    private String address;
+    private final String address;
 
-    private Router router;
+    private final Router router;
 
-    private int port;
+    private final int port;
 
-    private ThreadPoolExecutor threadpool;
+    private final ThreadPoolExecutor threadpool;
 
     public SSLServer(String address, int port, Router router) throws Exception {
         this("TLS", address, port, router);

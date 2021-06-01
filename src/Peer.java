@@ -51,33 +51,30 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
     public void sendMessageToServer(int n) throws RemoteException {
         try {
-            configuration.getChord().lookup(configuration.getChord().getSuccessor().getInetSocketAddress(), 10);
+             ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(50);
 
-            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(50);
+             Consumer<Integer> send = (Integer i) -> {
+                 try {
+                     SSLClient client = new SSLClient(configuration.getChord().getSuccessor().getInetAddress().getHostAddress(), configuration.getChord().getSuccessor().getPort());
+                     client.connect();
+                     //client.write(new FileManager().read("../../lorem.txt"));
+                     client.write("12345".getBytes());
+                     client.read();
+                     Thread.sleep(2000);
 
+                     client.shutdown();
 
-            Consumer<Integer> send = (Integer i) -> {
-                try {
-                    SSLClient client = new SSLClient(configuration.getChord().getSuccessor().getInetAddress().getHostAddress(), configuration.getChord().getSuccessor().getPort());
-                    client.connect();
-                    //client.write(new FileManager().read("../../lorem.txt"));
-                    client.write("12345".getBytes());
-                    client.read();
-                    Thread.sleep(2000);
+                 } catch(Exception e) {
+                     Logger.error(e, true);
+                 }
+             };
 
-                    client.shutdown();
-
-                } catch(Exception e) {
-                    Logger.error(e, true);
-                }
-            };
-
-            for (int i = 0; i < n; i++) {
-                int j = i;
-                executor.execute(() -> send.accept(j+1));
+             for (int i = 0; i < n; i++) {
+                 int j = i;
+                 executor.execute(() -> send.accept(j+1));
                 
-                // Thread.sleep(50 + (int) (Math.random() * 50));
-            }
+                 // Thread.sleep(50 + (int) (Math.random() * 50));
+             }
             
         } catch (Exception e) {
             Logger.error(e, true);

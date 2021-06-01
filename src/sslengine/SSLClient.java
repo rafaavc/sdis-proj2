@@ -19,9 +19,9 @@ import java.util.function.BiConsumer;
 
 public class SSLClient extends SSLPeer{
 
-    private String address;
-    private int port;
-    private SSLEngine engine;
+    private final String address;
+    private final int port;
+    private final SSLEngine engine;
     private SocketChannel socket;
 
     public SSLEngine getEngine() {

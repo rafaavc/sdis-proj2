@@ -2,7 +2,7 @@ package sslengine;
 
 public class ServerThread implements Runnable {
 
-    private SSLServer server;
+    private final SSLServer server;
 
     public ServerThread(SSLServer server){
         this.server = server;

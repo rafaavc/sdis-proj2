@@ -12,7 +12,8 @@ public class Logger {
         SSL,
         MESSAGE,
         CHORD,
-        QUEUE
+        QUEUE,
+        BACKUP
     }
 
     private static final List<DebugType> active = new ArrayList<>();
@@ -21,6 +22,8 @@ public class Logger {
 //        setActive(DebugType.MESSAGE);
 //        setActive(DebugType.CHORD);
 //        setActive(DebugType.QUEUE);
+        setActive(DebugType.BACKUP);
+
     }
 
     public static void setActive(DebugType type) {

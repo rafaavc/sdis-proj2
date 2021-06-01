@@ -3,7 +3,7 @@ package actions;
 import configuration.PeerConfiguration;
 import sslengine.SSLClient;
 
-public class CheckDeleted {
+public class CheckDeleted implements Action {
     private final PeerConfiguration configuration;
 
     public CheckDeleted(PeerConfiguration configuration) {
@@ -14,7 +14,7 @@ public class CheckDeleted {
         try {
             SSLClient client = new SSLClient(configuration.getServer().getAddress(), configuration.getServer().getPort());
             client.connect();
-            for (String fileId : configuration.getPeerState().getBackedUpFileIds())
+            for (int fileKey : configuration.getPeerState().getBackedUpFileIds())
             {
                 // byte[] msg = new MessageFactory(new ProtocolVersion(1, 1)).getFilecheckMessage(configuration.getPeerId(), fileId);
                 // client.write(msg);

@@ -10,7 +10,7 @@ import utils.Result;
 
 public class Delete {
     private final PeerConfiguration configuration;
-    private final String fileId;
+    private final int fileKey;
     private final CompletableFuture<Result> future;
 
     private class DeleteIter implements Runnable {
@@ -48,15 +48,15 @@ public class Delete {
         }
     }
 
-    public Delete(CompletableFuture<Result> future, PeerConfiguration configuration, String fileId) {
+    public Delete(CompletableFuture<Result> future, PeerConfiguration configuration, int fileKey) {
         this.configuration = configuration;
-        this.fileId = fileId;
+        this.fileKey = fileKey;
         this.future = future;
     }
 
     public void execute() {
-        configuration.getPeerState().addDeletedFile(fileId);
-        this.configuration.getPeerState().deleteFile(fileId);
+        configuration.getPeerState().addDeletedFile(fileKey);
+        this.configuration.getPeerState().deleteFile(fileKey);
         
         try 
         {

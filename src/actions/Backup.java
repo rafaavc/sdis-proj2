@@ -1,26 +1,26 @@
 package actions;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
+import chord.ChordNode;
 import configuration.PeerConfiguration;
-import files.Chunk;
-import files.ChunkedFile;
-import messages.trackers.StoredTracker;
-import state.FileInfo;
+import files.FileRepresentation;
+import messages.Message;
+import messages.MessageFactory;
+import sslengine.SSLClient;
+import state.MyFileInfo;
 import utils.Logger;
 import utils.Result;
 
-public class Backup extends Action {
+public class Backup implements Action {
     private final PeerConfiguration configuration;
     private final String filePath;
     private final int desiredReplicationDegree;
     private final CompletableFuture<Result> future;
 
-    public Backup(InetSocketAddress destination, CompletableFuture<Result> future, PeerConfiguration configuration, String filePath, int desiredReplicationDegree) throws Exception {
-        super(destination);
+    public Backup(CompletableFuture<Result> future, PeerConfiguration configuration, String filePath, int desiredReplicationDegree) throws Exception {
         this.configuration = configuration;
         this.filePath = filePath;
         this.desiredReplicationDegree = desiredReplicationDegree;
@@ -30,20 +30,16 @@ public class Backup extends Action {
     public void execute() {
         try {
 
-            ChunkedFile file = new ChunkedFile(filePath);
-            FileInfo info = new FileInfo(filePath, file.getFileId(), desiredReplicationDegree);
+            FileRepresentation file = new FileRepresentation(filePath);
+            MyFileInfo info = new MyFileInfo(filePath, file.getFileKey(), desiredReplicationDegree);
 
-            Map<Chunk, byte[]> chunksToSend = new HashMap<>();
+            Future<ChordNode> destinationNode = configuration.getChord().lookup(info.getFileKey());
 
+            Message message = MessageFactory.getPutfileMessage(configuration.getPeerId(), file.getFileKey(), desiredReplicationDegree, file.getData());
+            configuration.getPeerState().addFile(info);
 
-
-            Logger.log("I split the file into these chunks: " + chunksToSend);
-
-            this.configuration.getPeerState().addFile(info);
-
-            StoredTracker storedTracker = StoredTracker.getNewTracker();
-
-            configuration.getThreadScheduler().execute(new ChunksBackup(destination, client, future, storedTracker, configuration, info, chunksToSend));
+            Future<Message> reply = SSLClient.sendQueued(configuration, destinationNode.get().getInetSocketAddress(), message, true);
+            Logger.debug(Logger.DebugType.BACKUP, "Got reply = " + reply);
 
         } catch(Exception e) {
             Logger.error(e, future);

@@ -1,7 +1,12 @@
 package chord;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -84,12 +89,20 @@ public class Chord {
         this(configuration, peerAddress, null);
     }
 
+    private static int generateId(String original) throws NoSuchAlgorithmException {
+        return ByteBuffer.wrap(MessageDigest.getInstance("SHA-256").digest(original.getBytes())).getInt();
+    }
+
     private int generateNodeId(InetSocketAddress peerAddress) throws NoSuchAlgorithmException {
         String original = peerAddress.getAddress().getHostAddress() + peerAddress.getPort();
+        return generateId(original);
+    }
 
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    public static int generateFileId(File file) throws Exception {
+        BasicFileAttributes attr = Files.readAttributes(Path.of("../filesystem/" + file.getPath()), BasicFileAttributes.class);
 
-        return ByteBuffer.wrap(digest.digest(original.getBytes())).getInt();
+        String original = file.getPath() + attr.lastModifiedTime() + attr.creationTime() + attr.size();
+        return generateId(original);
     }
 
     private int getCollisionFreeId(InetSocketAddress peerAddress, InetSocketAddress preexistingPeerAddress) throws Exception {

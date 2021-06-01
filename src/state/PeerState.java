@@ -25,12 +25,12 @@ public class PeerState implements Serializable {
     public static String stateFileName = "metadata";
     private final String dir;
 
-    private final ConcurrentMap<String, FileInfo> files = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ConcurrentMap<Integer, ChunkInfo>> chunks = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, MyFileInfo> myFiles = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Integer> myFileNameKey = new ConcurrentHashMap<>();
 
-    private final ConcurrentMap<String, String> fileNameId = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, OthersFileInfo> othersFiles = new ConcurrentHashMap<>();
 
-    private final List<String> deletedFiles = new ArrayList<>();
+    private final List<Integer> deletedFiles = new ArrayList<>();
 
     private int maximumSpaceAvailable = -1;
 
@@ -53,132 +53,77 @@ public class PeerState implements Serializable {
 
     public float getOccupiedStorage() {
         float occupiedStorage = 0;
-        for (ChunkInfo chunk : getChunks()) occupiedStorage += chunk.getSize();
+        for (OthersFileInfo chunk : getOthersFiles()) occupiedStorage += chunk.getSize();
         return occupiedStorage;
     }
 
-    public String getFileId(String fileName) {
-        return fileNameId.get(fileName);
+    public int getFileKey(String fileName) {
+        return myFileNameKey.get(fileName);
     }
 
-    public void addFile(FileInfo f) {
-        synchronized (files) {
-            files.put(f.getFileId(), f);
-            fileNameId.put(f.getFileName(), f.getFileId());
+    public void addFile(MyFileInfo f) {
+        synchronized (myFiles) {
+            myFiles.put(f.getFileKey(), f);
+            myFileNameKey.put(f.getFileName(), f.getFileKey());
             writeState();
         }
     }
 
-    public void addDeletedFile(String fileId) {
+    public void addDeletedFile(Integer fileKey) {
         synchronized (deletedFiles) {
-            if (!deletedFiles.contains(fileId)) deletedFiles.add(fileId);
+            if (!deletedFiles.contains(fileKey)) deletedFiles.add(fileKey);
             writeState();
         }
     }
 
-    public void removeDeletedFile(String fileId) {
+    public void removeDeletedFile(Integer fileKey) {
         synchronized (deletedFiles) {
-            deletedFiles.remove(fileId);
+            deletedFiles.remove(fileKey);
             writeState();
         }
     }
 
-    public boolean isDeleted(String fileId) {
+    public boolean isDeleted(Integer fileKey) {
         synchronized (deletedFiles) {
-            return deletedFiles.contains(fileId);
+            return deletedFiles.contains(fileKey);
         }
     }
 
-    public void deleteFile(String fileId) {
-        synchronized (files) {
-            fileNameId.remove(files.get(fileId).getFileName());
-            files.remove(fileId);
+    public void deleteFile(Integer fileKey) {
+        synchronized (myFiles) {
+            myFileNameKey.remove(myFiles.get(fileKey).getFileName());
+            myFiles.remove(fileKey);
             writeState();
         }
     }
 
     public boolean ownsFileWithId(String fileId) {
-        return files.containsKey(fileId);
+        return myFiles.containsKey(fileId);
     }
 
     public boolean ownsFileWithName(String fileName) {
-        return fileNameId.containsKey(fileName);
+        return myFileNameKey.containsKey(fileName);
     }
 
-    public void addChunk(ChunkInfo c) {
-        synchronized (chunks) {
-            if (chunks.containsKey(c.getFileId()) && !chunks.get(c.getFileId()).containsKey(c.getChunkNo())) {
-                chunks.get(c.getFileId()).put(c.getChunkNo(), c);
-            } else if (!chunks.containsKey(c.getFileId())) {
-                ConcurrentMap<Integer, ChunkInfo> info = new ConcurrentHashMap<>();
-                info.put(c.getChunkNo(), c);
-                chunks.put(c.getFileId(), info);
-            }
-            writeState();
-        }
-        try {
-            this.write();
-        }
-        catch(IOException e)
-        {
-            Logger.error("Error writing peer state. " + e.getMessage());
-        }
+    public MyFileInfo getFile(Integer fileId) {
+        return myFiles.get(fileId);
     }
 
-    public void updateChunkPerceivedRepDegree(String fileId, int chunkNo, int perceivedReplicationDegree) {
-        synchronized (chunks) {
-            if (chunks.containsKey(fileId)) {
-                Map<Integer, ChunkInfo> fileChunks = chunks.get(fileId);
-                if (fileChunks.containsKey(chunkNo)) {
-                    fileChunks.get(chunkNo).setPerceivedReplicationDegree(perceivedReplicationDegree); // TODO this may need improvements
-                }
-            }
-            writeState();
-        }
+
+    public Set<Integer> getBackedUpFileIds() {
+        return othersFiles.keySet();
     }
 
-    public void deleteChunk(ChunkInfo c) {
-        synchronized (chunks) {
-            chunks.get(c.getFileId()).remove(c.getChunkNo());
-            writeState();
-        }
+    public boolean hasBackedUpFile(Integer fileId) {
+        return othersFiles.containsKey(fileId);
     }
 
-    public void deleteFileChunks(String fileId) {
-        synchronized (chunks) {
-            this.chunks.remove(fileId);
-            writeState();
-        }
+    public OthersFileInfo getBackedUpFile(Integer fileId) {
+        return othersFiles.getOrDefault(fileId, null);
     }
 
-    public Set<String> getBackedUpFileIds() {
-        return this.chunks.keySet();
-    }
-
-    public FileInfo getFile(String fileId) {
-        return files.get(fileId);
-    }
-
-    public boolean hasFileChunks(String fileId) {
-        return chunks.containsKey(fileId);
-    }
-
-    public boolean hasChunk(String fileId, int chunkNo) {
-        return chunks.containsKey(fileId) && chunks.get(fileId).containsKey(chunkNo);
-    }
-
-    public ChunkInfo getChunk(String fileId, int chunkNo) {
-        return chunks.containsKey(fileId) ? chunks.get(fileId).get(chunkNo) : null;
-    }
-
-    public List<ChunkInfo> getChunks() {
-        List<ChunkInfo> res = new ArrayList<>();
-
-        for (Map<Integer, ChunkInfo> m : this.chunks.values()) {
-            for (ChunkInfo c : m.values()) res.add(c);
-        }
-
-        return res;
+    public List<OthersFileInfo> getOthersFiles() {
+        return new ArrayList<>(othersFiles.values());
     }
 
     public static PeerState read(String dir) throws IOException, ClassNotFoundException {
@@ -229,31 +174,25 @@ public class PeerState implements Serializable {
 
         StringBuilder res = new StringBuilder();
 
-        if (chunks.isEmpty() && files.isEmpty()) res.append("I haven't sent any files nor backed up any chunks.\n");
+        if (othersFiles.isEmpty() && myFiles.isEmpty()) res.append("I haven't sent any files nor backed up any chunks.\n");
 
-        if (!chunks.isEmpty()) {
-            res.append("I've stored these chunks:\n");
-            for (Map<Integer, ChunkInfo> chunks : chunks.values()) {
-                for (ChunkInfo chunk : chunks.values()) {
-                    res.append("- ");
-                    res.append(chunk);
-                    res.append("\n");
-                }
+        if (!othersFiles.isEmpty()) {
+            res.append("I've stored these files:\n");
+            for (OthersFileInfo f : othersFiles.values()) {
+                res.append("- ").append(f).append("\n");
             }
             res.append("\n");
         }
 
-        if (!files.isEmpty()) {
+        if (!myFiles.isEmpty()) {
             res.append("I've sent these files for backup:\n");
-            for (FileInfo file : files.values()) {
-                res.append("- ");
-                res.append(file);
-                res.append("\n");
+            for (MyFileInfo file : myFiles.values()) {
+                res.append("- ").append(file).append("\n");
             }
             res.append("\n");
         }
-        res.append("Maximum storage: " + getMaximumStorage() + "\n");
-        res.append("Occupied storage: " + getOccupiedStorage() + "\n");
+        res.append("Maximum storage: ").append(getMaximumStorage()).append("\n")
+                .append("Occupied storage: ").append(getOccupiedStorage()).append("\n");
 
         return res.toString();
     }

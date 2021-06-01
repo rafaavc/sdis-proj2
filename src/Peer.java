@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.RemoteException;
@@ -10,23 +9,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
 
-import javax.net.ssl.SSLEngineResult;
-
 import configuration.ClientInterface;
 import configuration.PeerConfiguration;
-import files.FileManager;
 import messages.Message;
 import messages.MessageFactory;
 import sslengine.SSLClient;
 import state.PeerState;
 import actions.Backup;
-import actions.CheckDeleted;
 import actions.Delete;
-import actions.Restore;
-import chord.ChordNode;
 import utils.Logger;
 import utils.Result;
-import actions.Reclaim;
 
 public class Peer extends UnicastRemoteObject implements ClientInterface {
     private static final long serialVersionUID = 5157944159616018684L;
@@ -78,19 +70,17 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
         if (getPeerState().ownsFileWithName(fileName)) 
         {
-            String fileId = getPeerState().getFileId(fileName);
+            int fileKey = getPeerState().getFileKey(fileName);
             Logger.log("The file " + fileName + " had an older version. Deleting it.");
 
-            new Delete(new CompletableFuture<>(), configuration, fileId).execute();
+            new Delete(new CompletableFuture<>(), configuration, fileKey).execute();
         }
 
         CompletableFuture<Result> f = new CompletableFuture<>();
-
-        //new Backup(f, configuration, filePath, desiredReplicationDegree).execute();
-        //Logger.todo(this);
         
         try
         {
+            new Backup(f, configuration, filePath, desiredReplicationDegree).execute();
             return f.get();
         }
         catch(Exception e)
@@ -107,7 +97,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
             return new Result(false, "The file '" + fileName + "' doesn't exist in the peer's history.");
         }
         CompletableFuture<Result> f = new CompletableFuture<>();
-        new Restore(f, configuration, getPeerState().getFileId(fileName)).execute();
+//        new Restore(f, configuration, getPeerState().getFileKey(fileName)).execute();
 
         try
         {
@@ -126,7 +116,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
             Logger.error("The file '" + fileName + "' doesn't exist in my history.");
             return new Result(false, "The file '" + fileName + "' doesn't exist in the peer's history.");
         }
-        String fileId = getPeerState().getFileId(fileName);
+        int fileId = getPeerState().getFileKey(fileName);
         CompletableFuture<Result> f = new CompletableFuture<>();
         new Delete(f, configuration, fileId).execute();
 
@@ -143,7 +133,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
     public Result reclaim(int kb) throws RemoteException {
         CompletableFuture<Result> f = new CompletableFuture<>();
-        new Reclaim(f, configuration, kb).execute();
+//        new Reclaim(f, configuration, kb).execute();
 
         try
         {

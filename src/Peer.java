@@ -19,6 +19,7 @@ import actions.Backup;
 import actions.Delete;
 import utils.Logger;
 import utils.Result;
+import utils.ResultWithData;
 
 public class Peer extends UnicastRemoteObject implements ClientInterface {
     private static final long serialVersionUID = 5157944159616018684L;
@@ -76,7 +77,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
             new Delete(new CompletableFuture<>(), configuration, fileKey).execute();
         }
 
-        CompletableFuture<Result> f = new CompletableFuture<>();
+        CompletableFuture<ResultWithData<Integer>> f = new CompletableFuture<>();
         
         try
         {

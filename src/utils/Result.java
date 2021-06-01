@@ -6,6 +6,7 @@ public class Result implements Serializable {
     private static final long serialVersionUID = -1997059718009930688L;
     private final boolean success;
     private final String message;
+    protected boolean hasData = false;
     
     public Result(boolean success, String message) {
         this.success = success;
@@ -18,5 +19,9 @@ public class Result implements Serializable {
 
     public boolean success() {
         return success;
+    }
+
+    public boolean hasData() {
+        return hasData;
     }
 }

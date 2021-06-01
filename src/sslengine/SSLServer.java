@@ -96,7 +96,7 @@ public class SSLServer extends SSLPeer {
 
                         String clientAddress = socket.getRemoteAddress().toString();
 
-                        Thread.sleep(50);
+                        Thread.sleep(75);
 
                         ReadResult msg;
                         try 

@@ -68,19 +68,8 @@ public class FileManager {
         channel.force(true);
     }
 
-    public void writeChunk(String fileId, int chunkNo, byte[] data) throws IOException {
-        String dir = this.rootDir + "/" + fileId;
-        createDir(dir);
-
-        write(fileId + "/" + chunkNo, data);
-    }
-
-    public void deleteChunk(String fileId, int chunkNo) throws IOException {
-        File f = new File(this.rootDir + "/" + fileId + "/" + chunkNo);
-        f.delete();
-        
-        File dir = new File(this.rootDir + "/" + fileId);
-        if (dir.listFiles().length == 0) dir.delete();
+    public void writeBackedupFile(int fileId, byte[] data) throws IOException {
+        write("f" + fileId, data);
     }
 
     public byte[] read(String file) throws IOException, ArgsException {
@@ -95,20 +84,11 @@ public class FileManager {
         return data;
     }
 
-    public byte[] readChunk(String fileId, int chunkNo) throws IOException, ArgsException {
-        String dir = this.rootDir + "/" + fileId;
-        createDir(dir);
-
-        return read(fileId + "/" + chunkNo);
+    public byte[] readBackedUpFile(int fileKey) throws IOException, ArgsException {
+        return read("f" + fileKey);
     }
 
-    public void deleteFileChunks(String fileId) {
-        File fileFolder = new File(this.rootDir + "/" + fileId);
-
-        for (File chunk : fileFolder.listFiles()) {
-            chunk.delete();
-        }
-
-        fileFolder.delete();
+    public void deleteBackedUpFile(int fileKey) {
+        new File(this.rootDir + "/f" + fileKey).delete();
     }
 }

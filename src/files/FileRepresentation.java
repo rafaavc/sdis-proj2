@@ -13,6 +13,16 @@ public class FileRepresentation {
         this.data = data;
     }
 
+    public FileRepresentation(int fileKey, byte[] data) throws Exception {
+        this.fileKey = fileKey;
+        this.data = data;
+    }
+
+    public FileRepresentation(int fileKey, String path) throws Exception {
+        this.fileKey = fileKey;
+        this.data = new FileManager().read(path);
+    }
+
     public FileRepresentation(String path) throws Exception {
         this(new File(path), new FileManager().read(path));
     }

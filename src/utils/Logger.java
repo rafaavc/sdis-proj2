@@ -24,7 +24,7 @@ public class Logger {
 //        setActive(DebugType.MESSAGE);
 //        setActive(DebugType.CHORD);
 //        setActive(DebugType.QUEUE);
-//        setActive(DebugType.BACKUP);
+        setActive(DebugType.BACKUP);
 //        setActive(DebugType.FILEBUCKET);
 //        setActive(DebugType.FILETRANSFER);
 

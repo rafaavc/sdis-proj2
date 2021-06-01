@@ -88,19 +88,23 @@ public class TestApp {
             if (result != null && result.success()) 
             {
                 Logger.log("[SUCCESS] " + result.getMessage());
-                return;
-            } 
+            }
             else if (result != null)
             {
                 Logger.log("[FAILURE] " + result.getMessage());
             }
-        } catch(NotBoundException e) {
+        } catch(NotBoundException e)
+        {
             Logger.error("Could not find peer with access point '" + args[0] + "'.");
             System.exit(1);
-        } catch(ArgsException e) {
+        }
+        catch(ArgsException e)
+        {
             Logger.error(e, false);
             System.exit(1);
-        } catch(Exception e) {
+        }
+        catch(Exception e)
+        {
             Logger.error(e, true);
         }
     }

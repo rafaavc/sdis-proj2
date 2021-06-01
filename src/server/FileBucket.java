@@ -12,6 +12,7 @@ public class FileBucket {
     private final int goal;
     private final Consumer<byte[]> onComplete;
     private final ScheduledFuture<?> future;
+    private int count = 0;
 
     public FileBucket(int goal, Consumer<byte[]> onComplete) {
         this.goal = goal;
@@ -43,6 +44,12 @@ public class FileBucket {
             future.cancel(false);
 
             if (parts.size() > goal) Logger.error("Got more parts than needed! (" + parts.size() + "/" + goal + ")");
+        }
+        count++;
+        if (count >= 120)
+        {
+            onComplete.accept(null);
+            future.cancel(false);
         }
     }
 

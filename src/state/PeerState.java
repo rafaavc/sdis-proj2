@@ -97,6 +97,13 @@ public class PeerState implements Serializable {
         }
     }
 
+    public void addBackedUpFile(OthersFileInfo file) {
+        synchronized (othersFiles) {
+            othersFiles.put(file.getFileKey(), file);
+            writeState();
+        }
+    }
+
     public boolean ownsFileWithId(String fileId) {
         return myFiles.containsKey(fileId);
     }

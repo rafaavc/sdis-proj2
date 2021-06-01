@@ -1,9 +1,6 @@
 package actions;
 
-import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 import chord.ChordNode;
 import configuration.PeerConfiguration;
@@ -12,40 +9,58 @@ import messages.Message;
 import messages.MessageFactory;
 import state.MyFileInfo;
 import utils.Logger;
-import utils.Result;
+import utils.ResultWithData;
 
 public class Backup implements Action {
     private final PeerConfiguration configuration;
     private final String filePath;
-    private final int desiredReplicationDegree;
-    private final CompletableFuture<Result> future;
+    private final int desiredReplicationDegree, alreadyObtainedReplicationDeg;
+    private final CompletableFuture<ResultWithData<Integer>> future;
+    private final boolean backingUp;
+    private final FileRepresentation file;
 
-    public Backup(CompletableFuture<Result> future, PeerConfiguration configuration, String filePath, int desiredReplicationDegree) {
+    public Backup(CompletableFuture<ResultWithData<Integer>> future, PeerConfiguration configuration, String filePath, int desiredReplicationDegree) throws Exception {
         this.configuration = configuration;
         this.filePath = filePath;
         this.desiredReplicationDegree = desiredReplicationDegree;
         this.future = future;
+        backingUp = true;
+        file = new FileRepresentation(filePath);
+        alreadyObtainedReplicationDeg = 0;
+    }
+
+    public Backup(CompletableFuture<ResultWithData<Integer>> future, PeerConfiguration configuration, FileRepresentation file, int desiredReplicationDegree, int alreadyObtainedReplicationDeg) {
+        this.configuration = configuration;
+        this.filePath = null;
+        this.desiredReplicationDegree = desiredReplicationDegree;
+        this.future = future;
+        this.file = file;
+        this.alreadyObtainedReplicationDeg = alreadyObtainedReplicationDeg;
+        backingUp = false;
     }
 
     public void execute() {
-        try {
+        Logger.log(backingUp ? "Executing backup of file " + filePath : "Sending file " + file.getFileKey() + " to my successor");
+        try
+        {
+            ChordNode destinationNode;
+            if (backingUp) destinationNode = configuration.getChord().lookup(file.getFileKey()).get();
+            else destinationNode = configuration.getChord().getSuccessor();
 
-            FileRepresentation file = new FileRepresentation(filePath);
-            MyFileInfo info = new MyFileInfo(filePath, file.getFileKey(), desiredReplicationDegree);
-
-            Future<ChordNode> destinationNode = configuration.getChord().lookup(info.getFileKey());
-
-
-            Message message = MessageFactory.getPutfileMessage(configuration.getPeerId(), file.getFileKey(), (int) Math.ceil(file.getData().length / 15000.), desiredReplicationDegree);
+            Message message = MessageFactory.getPutfileMessage(configuration.getPeerId(), file.getFileKey(), (int) Math.ceil(file.getData().length / 15000.), desiredReplicationDegree, alreadyObtainedReplicationDeg);
             Logger.debug(Logger.DebugType.BACKUP, "Sending " + message);
-            configuration.getPeerState().addFile(info);
 
-
-
-            future.complete(FileSender.sendFile(configuration, file, destinationNode.get(), message));
-
-        } catch(Exception e) {
-            Logger.error(e, future);
+            ResultWithData<Integer> result = FileSender.sendFile(configuration, file, destinationNode, message);
+            if (result.success()) {
+                int perceivedReplicationDegree = result.getData();
+                if (backingUp) configuration.getPeerState().addFile(new MyFileInfo(filePath, file.getFileKey(), desiredReplicationDegree, perceivedReplicationDegree));
+            }
+            future.complete(result);
+        }
+        catch(Exception e)
+        {
+            Logger.error("executing backup action", e, true);
+            future.complete(new ResultWithData<>(false, e.getMessage(), -1));
         }
     }
 }

@@ -14,7 +14,7 @@ public class Message {
     private final Integer fileKey;
     private ChordNode node = null;
     private MessageType messageType;
-    private short replicationDeg = -1;
+    private short replicationDeg = -1, alreadyPerceivedDegree = -1;
     private int order = -1;
 
     private byte[] body = null;
@@ -33,7 +33,9 @@ public class Message {
         PREDECESSOR,
         NOTIFY,
         DATA,
-        PROCESSED
+        PROCESSEDNO,   // processed ok, doesn't need to receive data
+        PROCESSEDYES,   // processed ok, needs to receive data
+        KEEPALIVE // keep waiting for a better reply
     }
 
     private static final String CRLF = new String(new byte[] { 0xD, 0xA });
@@ -53,7 +55,8 @@ public class Message {
         messageTypeStrings.put(MessageType.PREDECESSOR, "PREDECESSOR");
         messageTypeStrings.put(MessageType.NOTIFY, "NOTIFY");
         messageTypeStrings.put(MessageType.DATA, "DATA");
-        messageTypeStrings.put(MessageType.PROCESSED, "PROCESSED");
+        messageTypeStrings.put(MessageType.PROCESSEDNO, "PROCESSEDNO");
+        messageTypeStrings.put(MessageType.PROCESSEDYES, "PROCESSEDYES");
     }
 
     public Message(int senderId, Integer fileKey) {
@@ -102,6 +105,12 @@ public class Message {
         this.order = nParts;
     }
 
+    public Message(MessageType messageType, int senderId, int fileKey, int nParts, int replicationDegree, int alreadyPerceivedDegree) {
+        this(messageType, senderId, fileKey, replicationDegree);
+        this.order = nParts;
+        this.alreadyPerceivedDegree = (short) alreadyPerceivedDegree;
+    }
+
     public Message setNode(String address, int port, int nodeId) throws UnknownHostException {
         this.node = new ChordNode(new InetSocketAddress(InetAddress.getByName(address), port), nodeId);
         return this;
@@ -119,6 +128,11 @@ public class Message {
 
     public Message setReplicationDeg(short replicationDeg) {
         this.replicationDeg = replicationDeg;
+        return this;
+    }
+
+    public Message setAlreadyPerceivedDegree(short alreadyPerceivedDegree) {
+        this.alreadyPerceivedDegree = alreadyPerceivedDegree;
         return this;
     }
 
@@ -155,8 +169,13 @@ public class Message {
     }
 
     public short getReplicationDeg() throws Exception {
-        if (this.replicationDeg < 0) throw new Exception("Trying to access chunkNo of message without this field.");
+        if (this.replicationDeg < 0) throw new Exception("Trying to access replication degree of message without this field.");
         return replicationDeg;
+    }
+
+    public short getAlreadyPerceivedDegree() throws Exception {
+        if (this.alreadyPerceivedDegree < 0) throw new Exception("Trying to access already perceived replication degree of message without this field.");
+        return alreadyPerceivedDegree;
     }
 
     public int getOrder() throws Exception {
@@ -187,6 +206,7 @@ public class Message {
         if (fileKey != null) components.add(String.valueOf(fileKey));
         if (order != -1) components.add(String.valueOf(order));
         if (replicationDeg != -1) components.add(String.valueOf(replicationDeg));
+        if (alreadyPerceivedDegree != -1) components.add(String.valueOf(alreadyPerceivedDegree));
         if (node != null) {
             components.add(node.getInetAddress().getHostAddress());
             components.add(String.valueOf(node.getPort()));

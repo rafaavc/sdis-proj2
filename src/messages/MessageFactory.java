@@ -28,12 +28,13 @@ public class MessageFactory {
         return new Message(MessageType.NOTIFY, senderId, node);
     }
 
-    public static Message getPutfileMessage(int senderId, int fileKey, int nParts, int replicationDeg) throws ArgsException {
+    public static Message getPutfileMessage(int senderId, int fileKey, int nParts, int replicationDeg, int alreadyObtainedDeg) throws ArgsException {
         return new Message(MessageType.PUTFILE,
                             senderId,
                             fileKey,
                             nParts,
-                            replicationDeg);
+                            replicationDeg,
+                            alreadyObtainedDeg);
     }
 
     public static Message getDataMessage(int senderId, int fileKey, int order, byte[] body) {
@@ -44,8 +45,12 @@ public class MessageFactory {
                                 body);
     }
 
-    public static Message getProcessedMessage(int senderId) {
-        return new Message(MessageType.PROCESSED, senderId);
+    public static Message getProcessedNoMessage(int senderId) {
+        return new Message(MessageType.PROCESSEDNO, senderId);
+    }
+
+    public static Message getProcessedYesMessage(int senderId) {
+        return new Message(MessageType.PROCESSEDYES, senderId);
     }
 
     public static byte[] getStoredMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {

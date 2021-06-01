@@ -10,13 +10,14 @@ public class MyFileInfo implements Serializable {
     private static final long serialVersionUID = 8712295865807115205L;
     
     private final String fileName;
-    private final int fileKey, desiredReplicationDegree;
+    private final int fileKey, desiredReplicationDegree, perceivedReplicationDegree;
 
-    public MyFileInfo(String pathName, int fileKey, int desiredReplicationDegree) {
+    public MyFileInfo(String pathName, int fileKey, int desiredReplicationDegree, int perceivedReplicationDegree) {
         Path path = Paths.get(pathName);
         this.fileName = path.getFileName().toString();
         this.fileKey = fileKey;
         this.desiredReplicationDegree = desiredReplicationDegree;
+        this.perceivedReplicationDegree = perceivedReplicationDegree;
     }
 
     public int getDesiredReplicationDegree() {

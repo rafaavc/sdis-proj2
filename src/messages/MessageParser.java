@@ -45,17 +45,18 @@ public class MessageParser {
             switch(type)
             {
                 case PUTFILE:
-                    message.setOrder(Integer.parseInt(headerPieces[3]));
-                    message.setReplicationDeg((short) Integer.parseInt(headerPieces[4]));
+                    message.setOrder(Integer.parseInt(headerPieces[3]))
+                        .setReplicationDeg((short) Integer.parseInt(headerPieces[4]))
+                        .setAlreadyPerceivedDegree((short) Integer.parseInt(headerPieces[5]));
 
                     byte[] body = Arrays.copyOfRange(data, bodyStart, length);
                     message.setBody(body);
                     break;
 
                 case DATA:
-                    message.setOrder(Integer.parseInt(headerPieces[3]));
                     byte[] chunkBodyData = Arrays.copyOfRange(data, bodyStart, length);
-                    message.setBody(chunkBodyData);
+                    message.setOrder(Integer.parseInt(headerPieces[3]))
+                        .setBody(chunkBodyData);
                     break;
 
                 case STORED: case REMOVED: case GETFILE: case DELETE: case LOOKUP: case FILECHECK:
@@ -81,7 +82,7 @@ public class MessageParser {
             message.setMessageType(type);
             
             switch (type) {
-                case GETPREDECESSOR: case PROCESSED: break;
+                case GETPREDECESSOR: case PROCESSEDNO: case PROCESSEDYES: break;
 
                 case NOTIFY: case PREDECESSOR:
                     if (type == MessageType.PREDECESSOR && headerPieces.length < 5) break;  // the successor doesn't have a predecessor

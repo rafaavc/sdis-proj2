@@ -78,6 +78,7 @@ public class TestApp {
                         System.exit(1);
                     }
                     stub.sendMessageToServer(Integer.parseInt(args[2]));
+                    result = new Result(true, "Sent messages!");
                     break;
                 default:
                     Logger.error("The operation '" + args[1] + "' doesn't exist.");

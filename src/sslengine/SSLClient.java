@@ -1,5 +1,6 @@
 package sslengine;
 
+import sslengine.queue.MessageQueue;
 import utils.Logger;
 import utils.Logger.DebugType;
 
@@ -13,9 +14,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class SSLClient extends SSLPeer{
 
@@ -23,6 +24,7 @@ public class SSLClient extends SSLPeer{
     private final int port;
     private final SSLEngine engine;
     private SocketChannel socket;
+    public final static MessageQueue queue = new MessageQueue();
 
     public SSLEngine getEngine() {
         return engine;
@@ -67,35 +69,6 @@ public class SSLClient extends SSLPeer{
         write(this.socket, this.engine, message);
     }
 
-    public Message sendAndReadReply(Message message) throws Exception {
-        return sendAndReadReply(message, true);
-    }
-
-    public Message sendAndReadReply(Message message, boolean parseMessage) throws Exception {
-        int total = 0;
-        while (total < 5) {
-            total++;
-            write(message);
-
-            int count = 0;
-            while (true) {
-                try {
-                    ReadResult data = read(this.socket, this.engine);
-                    if (parseMessage) return MessageParser.parse(data.getData().array(), data.getBytesRead());
-                    else if (data.getBytesRead() <= 0) throw new Exception();
-                    else return null;
-                } catch (Exception e) {
-                    count++;
-                    if (count > 4) break; // couldn't read reply
-                    Thread.sleep(count * 250);
-                }
-            }
-        }
-        if (parseMessage) throw new Exception("Couldn't get a reply to message: " + message.toString().trim());
-        return null;
-    }
-
-
     public void read() throws Exception {
         read(null);
     }
@@ -105,8 +78,9 @@ public class SSLClient extends SSLPeer{
         if (consumer != null) consumer.accept(msg.getData().array(), msg.getBytesRead());
     }
 
-    public Message readReply() throws InterruptedException {
+    public Message readReply(int maxCount) throws InterruptedException {
         int count = 0;
+        int previousValue = 125;
         while (true) {
             try
             {
@@ -117,43 +91,82 @@ public class SSLClient extends SSLPeer{
             catch (Exception e)
             {
                 count++;
-                if (count > 4) break; // couldn't read reply
-                Thread.sleep(count * 250);
+                if (count > maxCount) break; // couldn't read reply
+                previousValue *= 2;
+                Thread.sleep(previousValue);  // TODO remove
             }
         }
         return null;
     }
 
-    public static Future<Message> sendAndGetReply(PeerConfiguration configuration, InetSocketAddress address, Message message) throws Exception {
-        CompletableFuture<Message> future = new CompletableFuture<>();
-        configuration.getThreadScheduler().submit(() -> {
+//    public static Future<Message> send(PeerConfiguration configuration, InetSocketAddress address, Message message, boolean wantReply) throws Exception {
+//        CompletableFuture<Message> future = new CompletableFuture<>();
+//            try {
+//
+////                int total = 0;
+////                while (total < 5 && !future.isDone()) {
+////                    total++;
+//
+//                    SSLClient client = new SSLClient(address.getAddress().getHostAddress(), address.getPort());
+//                    client.connect();
+//
+//                    client.write(message);
+//                configuration.getThreadScheduler().submit(() -> {
+//
+//                    Message reply = null;
+//                    if (wantReply) reply = client.readReply();
+//
+//                    client.shutdown();
+//
+//                    if (reply != null || !wantReply) future.complete(reply);
+//
+//                    if (!future.isDone()) throw new Exception("Couldn't get a reply to message: " + message.toString().trim());
+//                });
+//
+//            } catch(Exception e) {
+//                future.completeExceptionally(e);
+//            }
+//
+//        return future;
+//    }
+
+    public static void send(ScheduledThreadPoolExecutor scheduler, SSLClient client, Message message, Consumer<Message> onComplete, boolean wantReply) throws Exception {
+        client.write(message);
+
+        scheduler.execute(() -> {
             try {
-                
-                int total = 0;
-                while (total < 5 && !future.isDone()) {
-                    total++;
-                
-                    SSLClient client = new SSLClient(address.getAddress().getHostAddress(), address.getPort());
-                    client.connect();
+                Message reply = client.readReply(5);
 
-                    client.write(message);
-
-                    Message reply = client.readReply();
-
-                    client.shutdown();
-
-                    if (reply != null) future.complete(reply);
+                if (reply != null || !wantReply) {
+                    onComplete.accept(reply);
+                    return;
                 }
 
-                if (!future.isDone()) throw new Exception("Couldn't get a reply to message: " + message.toString().trim());
-
-            } catch(Exception e) {
-                future.completeExceptionally(e);
+                throw new Exception("Couldn't get a reply to message: " + message.toString().trim());
+            } catch (Exception e) {
+                Logger.error("reading reply to message in send method of SSLClient", e, false);
+                onComplete.accept(null);
             }
-
         });
+    }
+
+    public static Future<Message> sendQueued(PeerConfiguration configuration, InetSocketAddress address, Message message, boolean wantReply) {
+        CompletableFuture<Message> future = new CompletableFuture<>();
+        Runnable pushTask = () -> {
+            try {
+                queue.push(address, message, wantReply ? future::complete : null);
+            } catch (Exception e) {
+                Logger.error("pushing message action to queue", e, true);
+            }
+        };
+
+        configuration.getThreadScheduler().execute(pushTask);
+
+        if (!wantReply) future.complete(null);
         return future;
     }
+
+
 
     public void shutdown() throws IOException {
         Logger.debug(DebugType.SSL, "Going to close connection with the server...");

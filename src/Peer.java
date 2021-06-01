@@ -6,6 +6,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
 
@@ -38,9 +39,8 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
         Logger.log("Running on protocol version " + configuration.getProtocolVersion() + ". Ready!");
 
-        if (configuration.getProtocolVersion().equals("1.1")) {
+        if (configuration.getProtocolVersion().equals("1.1"))
             new CheckDeleted(configuration).execute();
-        }
     }
 
     public void writeState() throws IOException {
@@ -55,24 +55,16 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
              Consumer<Integer> send = (Integer i) -> {
                  try {
-                     SSLClient client = new SSLClient(configuration.getChord().getSuccessor().getInetAddress().getHostAddress(), configuration.getChord().getSuccessor().getPort());
-                     client.connect();
-                     //client.write(new FileManager().read("../../lorem.txt"));
-                     client.write("12345".getBytes());
-                     client.read();
-                     Thread.sleep(2000);
-
-                     client.shutdown();
-
+                    Future<Message> f = SSLClient.sendQueued(configuration, configuration.getChord().getSuccessor().getInetSocketAddress(), new MessageFactory(configuration.getProtocolVersion()).getLookupMessage(11, 574), true);
+                    f.get();
                  } catch(Exception e) {
-                     Logger.error(e, true);
+                    Logger.error(e, true);
                  }
              };
 
              for (int i = 0; i < n; i++) {
-                 int j = i;
-                 executor.execute(() -> send.accept(j+1));
-                
+                 executor.execute(() -> send.accept(1));
+
                  // Thread.sleep(50 + (int) (Math.random() * 50));
              }
             

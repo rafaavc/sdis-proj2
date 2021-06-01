@@ -1,6 +1,5 @@
 package chord;
 
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
@@ -49,18 +48,18 @@ public class Chord {
         this.configuration = configuration;
         this.messageFactory = new MessageFactory(configuration.getProtocolVersion());
 
-        if (preexistingNode == null) id = this.generateNodeId(peerAddress);
+        if (preexistingNode == null || turnoff) id = this.generateNodeId(peerAddress);
         else id = this.getCollisionFreeId(peerAddress, preexistingNode);
 
         this.self = new ChordNode(peerAddress, id);
 
         if (preexistingNode == null) this.create();
         else {
-            if (turnoff) this.successor = new ChordNode(preexistingNode, 111);
+            if (turnoff) this.successor = new ChordNode(preexistingNode, 111);   // just for debug
             else this.join(preexistingNode);
         }
         
-        if (!turnoff)
+        if (!turnoff) // just for debug
         {
             configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
                 try {
@@ -69,7 +68,7 @@ public class Chord {
                     Logger.error(e, true);
                     Logger.debug(DebugType.CHORD, "Got exception in update fingers! " + e.getMessage());
                 }
-            }, configuration.getRandomDelay(1000, 100), 500, TimeUnit.MILLISECONDS);
+            }, configuration.getRandomDelay(1000, 100), 250, TimeUnit.MILLISECONDS);
 
             configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
                 try {
@@ -78,9 +77,9 @@ public class Chord {
                     Logger.error(e, true);
                     Logger.debug(DebugType.CHORD, "Got exception in stabilize! " + e.getMessage());
                 }
-            }, configuration.getRandomDelay(1000, 100), 2000, TimeUnit.MILLISECONDS);
+            }, configuration.getRandomDelay(1000, 100), 250, TimeUnit.MILLISECONDS);
 
-            configuration.getThreadScheduler().scheduleWithFixedDelay(this::checkPredecessor, 500, 2000, TimeUnit.MILLISECONDS);
+//            configuration.getThreadScheduler().scheduleWithFixedDelay(this::checkPredecessor, 500, 2000, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -180,7 +179,7 @@ public class Chord {
      * @throws Exception
      */
     public void updateFingers() throws Exception {
-        Logger.debug(DebugType.CHORD, "Update fingers");
+//        Logger.debug(DebugType.CHORD, "Update fingers");
 
         nextFingerToFix = nextFingerToFix + 1;
         if (nextFingerToFix > this.m - 1) nextFingerToFix = 0;
@@ -208,7 +207,7 @@ public class Chord {
                 throw new Exception("updateFingers: finger table was not valid.");
             }
         }
-        Logger.debug(DebugType.CHORD, "Update fingers ended");
+//        Logger.debug(DebugType.CHORD, "Update fingers ended");
     }
 
     /**
@@ -221,7 +220,7 @@ public class Chord {
         if (successor.getId() == getId()) return;
 
         Logger.debug(DebugType.CHORD, "Sending GETPREDECESSOR to " + successor);
-        Message reply = SSLClient.sendAndGetReply(configuration, successor.getInetSocketAddress(), messageFactory.getGetPredecessorMessage(self.getId())).get();
+        Message reply = SSLClient.sendQueued(configuration, successor.getInetSocketAddress(), messageFactory.getGetPredecessorMessage(self.getId()), true).get();
 
         try {
             ChordNode predecessorOfSuccessor = reply.getNode();  // if it has no predecessor it will throw exception
@@ -245,10 +244,7 @@ public class Chord {
     public void notifyPredecessor(ChordNode successor) throws Exception {
         Logger.debug(DebugType.CHORD, "Sending NOTIFY to successor " + successor);
 
-        SSLClient client = new SSLClient(successor.getInetAddress().getHostAddress(), successor.getPort());
-        client.connect();
-        client.sendAndReadReply(messageFactory.getNotifyMessage(self.getId(), self), false);
-        client.shutdown();
+        SSLClient.sendQueued(configuration, successor.getInetSocketAddress(), messageFactory.getNotifyMessage(self.getId(), self), false);
     }
 
     /**
@@ -338,10 +334,10 @@ public class Chord {
         Message message = messageFactory.getLookupMessage(id, k);
 
         int ntries = 0;
-        while ((ntries < 3 || id != 1234) && !future.isDone()) { // only sends null when the id is 1234
+        while ((ntries < 3 || id != 1234) && !future.isDone()) { // only sends exception when the id is 1234
             Logger.debug(DebugType.CHORD, "Sending LOOKUP of key " + k + " to " + peerAddress.toString());
 
-            Future<Message> f = SSLClient.sendAndGetReply(configuration, peerAddress, message);
+            Future<Message> f = SSLClient.sendQueued(configuration, peerAddress, message, true);
             try {
                 Message reply = f.get();
                 future.complete(reply.getNode());

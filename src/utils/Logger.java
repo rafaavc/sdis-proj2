@@ -10,7 +10,8 @@ public class Logger {
     public enum DebugType {
         SSL,
         MESSAGE,
-        CHORD
+        CHORD,
+        QUEUE
     }
 
     private static final List<DebugType> active = new ArrayList<>();
@@ -18,6 +19,7 @@ public class Logger {
 //        setActive(DebugType.SSL);
 //        setActive(DebugType.MESSAGE);
 //        setActive(DebugType.CHORD);
+//        setActive(DebugType.QUEUE);
     }
 
     public static void setActive(DebugType type) {

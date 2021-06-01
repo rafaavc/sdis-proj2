@@ -94,7 +94,7 @@ public abstract class SSLPeer {
     }
 
     protected ReadResult read(SocketChannel socket, SSLEngine engine) throws Exception {
-        Logger.debug(DebugType.SSL, "Going to read from the server...");
+        Logger.debug(DebugType.SSL, "Going to read...");
 
         ByteBuffer peerAppData = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize()),
             peerNetData = ByteBuffer.allocate(engine.getSession().getPacketBufferSize());

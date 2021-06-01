@@ -7,9 +7,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import configuration.PeerConfiguration;
-import configuration.ProtocolVersion;
 import files.FileManager;
-import messages.MessageFactory;
 import sslengine.SSLClient;
 import state.ChunkInfo;
 import utils.Logger;

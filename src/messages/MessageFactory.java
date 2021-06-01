@@ -1,80 +1,65 @@
 package messages;
 
 import chord.ChordNode;
-import configuration.ProtocolVersion;
 import exceptions.ArgsException;
 import messages.Message.MessageType;
 
 public class MessageFactory {
-    private final ProtocolVersion version;
-    
-    public MessageFactory(ProtocolVersion version) throws ArgsException {
-        this.version = version;
+
+    public static Message getLookupMessage(int senderId, int key) {
+        return new Message(MessageType.LOOKUP,
+                            senderId,
+                            key);
     }
 
-    public Message getLookupMessage(int senderId, int key) {
-        return new Message(version,
-                                    MessageType.LOOKUP,
-                                    senderId,
-                                    key);
+    public static Message getLookupResponseMessage(int senderId, int fileKey, ChordNode node) {
+        return new Message(MessageType.LOOKUPRESPONSE, senderId, fileKey, node);
     }
 
-    public Message getLookupResponseMessage(int senderId, int fileKey, ChordNode node) {
-        return new Message(version, MessageType.LOOKUPRESPONSE, senderId, fileKey, node);
+    public static Message getGetPredecessorMessage(int senderId) {
+        return new Message(MessageType.GETPREDECESSOR, senderId);
     }
 
-    public Message getGetPredecessorMessage(int senderId) {
-        return new Message(version, MessageType.GETPREDECESSOR, senderId);
+    public static Message getPredecessorMessage(int senderId, ChordNode node) {
+        return new Message(MessageType.PREDECESSOR, senderId, node);
     }
 
-    public Message getPredecessorMessage(int senderId, ChordNode node) {
-        return new Message(version, MessageType.PREDECESSOR, senderId, node);
+    public static Message getNotifyMessage(int senderId, ChordNode node) {
+        return new Message(MessageType.NOTIFY, senderId, node);
     }
 
-    public Message getNotifyMessage(int senderId, ChordNode node) {
-        return new Message(version, MessageType.NOTIFY, senderId, node);
+    public static Message getPutfileMessage(int senderId, int fileKey, int replicationDeg, byte[] body) throws ArgsException {
+        return new Message(MessageType.PUTFILE,
+                            senderId,
+                            fileKey,
+                            replicationDeg,
+                            body);
     }
 
-    public byte[] getPutchunkMessage(int senderId, int fileKey, int replicationDeg, int chunkNo, byte[] body) throws ArgsException {
-        Message msg = new Message(version, 
-                                    MessageType.PUTCHUNK,
-                                    senderId,
-                                    fileKey,
-                                    chunkNo,
-                                    replicationDeg,
-                                    body);
-        return msg.getBytes();
-    }
-
-    public byte[] getStoredMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
-        Message msg = new Message(version, 
-                                    MessageType.STORED,
+    public static byte[] getStoredMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
+        Message msg = new Message(MessageType.STORED,
                                     senderId,
                                     fileKey,
                                     chunkNo);
         return msg.getBytes();
     }
 
-    public byte[] getDeleteMessage(int senderId, int fileKey) throws ArgsException {
-        Message msg = new Message(version, 
-                                    MessageType.DELETE,
+    public static byte[] getDeleteMessage(int senderId, int fileKey) throws ArgsException {
+        Message msg = new Message(MessageType.DELETE,
                                     senderId,
                                     fileKey);
         return msg.getBytes();
     }
 
-    public byte[] getGetchunkMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
-        Message msg = new Message(version, 
-                                    MessageType.GETCHUNK,
-                                    senderId,
-                                    fileKey,
-                                    chunkNo);
-        return msg.getBytes();
+    public static Message getGetfileMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
+        return new Message(MessageType.GETFILE,
+                            senderId,
+                            fileKey,
+                            chunkNo);
     }
 
-    public byte[] getChunkMessage(int senderId, int fileKey, int chunkNo, byte[] body) throws ArgsException {
-        Message msg = new Message(version, 
-                                    MessageType.CHUNK,
+    public static byte[] getChunkMessage(int senderId, int fileKey, int chunkNo, byte[] body) throws ArgsException {
+        Message msg = new Message(MessageType.CHUNK,
                                     senderId,
                                     fileKey,
                                     chunkNo,
@@ -82,18 +67,16 @@ public class MessageFactory {
         return msg.getBytes();
     }
 
-    public byte[] getRemovedMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
-        Message msg = new Message(version, 
-                                    MessageType.REMOVED,
+    public static byte[] getRemovedMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
+        Message msg = new Message(MessageType.REMOVED,
                                     senderId,
                                     fileKey,
                                     chunkNo);
         return msg.getBytes();
     }
 
-    public byte[] getFilecheckMessage(int senderId, int fileKey) throws ArgsException {
-        Message msg = new Message(version, 
-                                    MessageType.FILECHECK,
+    public static byte[] getFilecheckMessage(int senderId, int fileKey) throws ArgsException {
+        Message msg = new Message(MessageType.FILECHECK,
                                     senderId,
                                     fileKey);
         return msg.getBytes();

@@ -1,12 +1,7 @@
 package server.handlers.strategies;
 
 import configuration.PeerConfiguration;
-import configuration.ProtocolVersion;
-import files.FileManager;
 import messages.Message;
-import messages.MessageFactory;
-import sslengine.SSLClient;
-import utils.Logger;
 
 public class VanillaRestoreStrategy extends RestoreStrategy {
     public VanillaRestoreStrategy(PeerConfiguration configuration) {

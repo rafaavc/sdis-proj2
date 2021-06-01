@@ -4,8 +4,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import configuration.PeerConfiguration;
-import configuration.ProtocolVersion;
-import messages.MessageFactory;
 import sslengine.SSLClient;
 import utils.Logger;
 import utils.Result;

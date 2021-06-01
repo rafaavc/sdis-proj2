@@ -4,21 +4,17 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import configuration.PeerConfiguration;
-import configuration.ProtocolVersion;
 import exceptions.ArgsException;
-import files.FileManager;
 import messages.Message;
 import messages.MessageFactory;
 import messages.trackers.StoredTracker;
-import sslengine.SSLClient;
-import state.ChunkInfo;
 import utils.Logger;
 
 public class EnhancedBackupStrategy extends BackupStrategy {
     private final ScheduledThreadPoolExecutor threadScheduler;
 
     public EnhancedBackupStrategy(PeerConfiguration configuration) throws ArgsException {
-        super(configuration, new MessageFactory(new ProtocolVersion(1, 0))); // the messages are exactly equal to 1.0
+        super(configuration); // the messages are exactly equal to 1.0
         this.threadScheduler = configuration.getThreadScheduler();
     }
 

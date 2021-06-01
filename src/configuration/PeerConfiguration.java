@@ -25,19 +25,17 @@ import utils.Logger;
 
 public class PeerConfiguration {
     private final String serviceAccessPoint;
-    private final ProtocolVersion protocolVersion;
     private final PeerState state;
     private final ChunkTracker chunkTracker;
     private final ScheduledThreadPoolExecutor threadScheduler;
     private final SSLServer server;
     private final Chord chord;
 
-    public PeerConfiguration(ProtocolVersion protocolVersion, String serviceAccessPoint, int serverPort) throws Exception {
-        this(protocolVersion, serviceAccessPoint, serverPort, null);
+    public PeerConfiguration(String serviceAccessPoint, int serverPort) throws Exception {
+        this(serviceAccessPoint, serverPort, null);
     }
 
-    public PeerConfiguration(ProtocolVersion protocolVersion, String serviceAccessPoint, int serverPort, InetSocketAddress preexistingNode) throws Exception {
-        this.protocolVersion = protocolVersion;
+    public PeerConfiguration(String serviceAccessPoint, int serverPort, InetSocketAddress preexistingNode) throws Exception {
         this.serviceAccessPoint = serviceAccessPoint;
 
         this.chunkTracker = new ChunkTracker();
@@ -84,22 +82,6 @@ public class PeerConfiguration {
 
     public String getRootDir() {
         return "../filesystem/p" + getPeerId();
-    }
-
-    public ProtocolVersion getProtocolVersion() {
-        return protocolVersion;
-    }
-
-    public BackupStrategy getBackupStrategy() throws ArgsException {
-        if (this.protocolVersion.equals("1.0")) return new VanillaBackupStrategy(this);
-        if (this.protocolVersion.equals("1.1")) return new EnhancedBackupStrategy(this);
-        return null;
-    }
-
-    public RestoreStrategy getRestoreStrategy() throws ArgsException {
-        if (this.protocolVersion.equals("1.0")) return new VanillaRestoreStrategy(this);
-        if (this.protocolVersion.equals("1.1")) return new EnhancedRestoreStrategy(this);
-        return null;
     }
 
     public int getPeerId() {

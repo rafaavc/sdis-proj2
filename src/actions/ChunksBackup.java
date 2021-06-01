@@ -26,7 +26,7 @@ public class ChunksBackup extends Action implements Runnable {
     public ChunksBackup(InetSocketAddress destination, SSLClient client, CompletableFuture<Result> future, StoredTracker storedTracker, PeerConfiguration configuration, FileInfo info, Map<Chunk, byte[]> chunksToSend) throws Exception {
         super(destination, client);
         this.count = 1;
-        this.sleepAmount = configuration.getProtocolVersion().equals("1.0") ? 1000 : 3000;
+        this.sleepAmount = 1000;
         this.configuration = configuration;
         this.info = info;
         this.chunksToSend = chunksToSend;

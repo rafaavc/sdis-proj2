@@ -3,13 +3,11 @@ package messages;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
-import configuration.ProtocolVersion;
 import exceptions.ArgsException;
 import exceptions.ArgsException.Type;
 import messages.Message.MessageType;
 import utils.IntParser;
 import utils.Logger;
-import utils.Logger.DebugType;
 
 public class MessageParser {
 
@@ -32,49 +30,40 @@ public class MessageParser {
 
         if (headerPieces.length < 3) throw new ArgsException(Type.INVALID_MESSAGE);
 
-        String version = headerPieces[0], messageType = headerPieces[1];
+        String messageType = headerPieces[0];
 
         MessageType type = getMessageType(messageType);
 
-        int senderId = IntParser.parse(headerPieces[2]);
+        int senderId = IntParser.parse(headerPieces[1]);
         Message message;
 
         if (needsFileKey(type)) {
-            int fileKey = IntParser.parse(headerPieces[3]);
-            message = new Message(new ProtocolVersion(version), senderId, fileKey);
+            int fileKey = IntParser.parse(headerPieces[2]);
+            message = new Message(senderId, fileKey);
             message.setMessageType(type);
 
             switch(type)
             {
-                case PUTCHUNK:
-                    message.setChunkNo(Integer.parseInt(headerPieces[4]));
-                    message.setReplicationDeg((short) Integer.parseInt(headerPieces[5]));
+                case PUTFILE:
+                    message.setReplicationDeg((short) Integer.parseInt(headerPieces[3]));
 
                     byte[] body = Arrays.copyOfRange(data, bodyStart, length);
                     message.setBody(body);
                     break;
 
-                case STORED:
-                    message.setChunkNo(Integer.parseInt(headerPieces[4]));
+                case STORED: case REMOVED: case GETFILE:
+                    message.setChunkNo(Integer.parseInt(headerPieces[3]));
                     break;
 
-                case GETCHUNK:   
-                    message.setChunkNo(Integer.parseInt(headerPieces[4]));
-                    break;
-                
                 case CHUNK:
-                    message.setChunkNo(Integer.parseInt(headerPieces[4]));
+                    message.setChunkNo(Integer.parseInt(headerPieces[3]));
 
                     byte[] chunkBody = Arrays.copyOfRange(data, bodyStart, length);
                     message.setBody(chunkBody);
                     break;
 
-                case REMOVED:   
-                    message.setChunkNo(Integer.parseInt(headerPieces[4]));   
-                    break;
-
                 case LOOKUPRESPONSE:
-                    message.setNode(headerPieces[4], IntParser.parse(headerPieces[5]), IntParser.parse(headerPieces[6]));
+                    message.setNode(headerPieces[3], IntParser.parse(headerPieces[4]), IntParser.parse(headerPieces[5]));
                     break;
 
                 case DELETE: case LOOKUP: case FILECHECK:
@@ -87,15 +76,15 @@ public class MessageParser {
         } 
         else
         {
-            message = new Message(new ProtocolVersion(version), senderId);
+            message = new Message(senderId);
             message.setMessageType(type);
             
             switch (type) {
                 case GETPREDECESSOR: break;
 
                 case NOTIFY: case PREDECESSOR:
-                    if (type == MessageType.PREDECESSOR && headerPieces.length < 6) break;  // the successor doesn't have a predecessor
-                    message.setNode(headerPieces[3], IntParser.parse(headerPieces[4]), IntParser.parse(headerPieces[5]));
+                    if (type == MessageType.PREDECESSOR && headerPieces.length < 5) break;  // the successor doesn't have a predecessor
+                    message.setNode(headerPieces[2], IntParser.parse(headerPieces[3]), IntParser.parse(headerPieces[4]));
                     break;
                 
                 default:
@@ -109,7 +98,7 @@ public class MessageParser {
 
     public static boolean needsFileKey(MessageType type) {
         return type == MessageType.CHUNK || type == MessageType.DELETE || type == MessageType.REMOVED 
-            || type == MessageType.PUTCHUNK || type == MessageType.STORED || type == MessageType.LOOKUP || type == MessageType.FILECHECK || type == MessageType.GETCHUNK || type == MessageType.LOOKUPRESPONSE;
+            || type == MessageType.PUTFILE || type == MessageType.STORED || type == MessageType.LOOKUP || type == MessageType.FILECHECK || type == MessageType.GETFILE || type == MessageType.LOOKUPRESPONSE;
     }
 
     public static MessageType getMessageType(String type) throws ArgsException {

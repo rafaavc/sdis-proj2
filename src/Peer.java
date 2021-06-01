@@ -37,10 +37,9 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
         Logger.log(this.getPeerState());
 
-        Logger.log("Running on protocol version " + configuration.getProtocolVersion() + ". Ready!");
+        Logger.log("Ready!");
 
-        if (configuration.getProtocolVersion().equals("1.1"))
-            new CheckDeleted(configuration).execute();
+//        new CheckDeleted(configuration).execute();
     }
 
     public void writeState() throws IOException {
@@ -55,7 +54,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
              Consumer<Integer> send = (Integer i) -> {
                  try {
-                    Future<Message> f = SSLClient.sendQueued(configuration, configuration.getChord().getSuccessor().getInetSocketAddress(), new MessageFactory(configuration.getProtocolVersion()).getLookupMessage(11, 574), true);
+                    Future<Message> f = SSLClient.sendQueued(configuration, configuration.getChord().getSuccessor().getInetSocketAddress(), MessageFactory.getLookupMessage(11, 574), true);
                     f.get();
                  } catch(Exception e) {
                     Logger.error(e, true);

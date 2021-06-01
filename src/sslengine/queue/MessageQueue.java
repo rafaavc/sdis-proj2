@@ -1,6 +1,5 @@
 package sslengine.queue;
 
-import configuration.PeerConfiguration;
 import messages.Message;
 import sslengine.SSLClient;
 import utils.Logger;

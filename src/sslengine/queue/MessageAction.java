@@ -3,8 +3,6 @@ package sslengine.queue;
 import messages.Message;
 import sslengine.SSLClient;
 
-import javax.net.ssl.SSLEngine;
-import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 
 public class MessageAction {

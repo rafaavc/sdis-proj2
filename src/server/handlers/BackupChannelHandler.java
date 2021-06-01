@@ -20,7 +20,7 @@ public class BackupChannelHandler extends Handler {
 
     public void execute(Message msg, InetAddress senderAddress) {
         switch(msg.getMessageType()) {
-            case PUTCHUNK:
+            case PUTFILE:
                 try 
                 {
                     StoredTracker storedTracker = StoredTracker.getNewTracker();

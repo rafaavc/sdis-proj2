@@ -7,11 +7,9 @@ import messages.trackers.StoredTracker;
 
 public abstract class BackupStrategy {
     protected final PeerConfiguration configuration;
-    protected final MessageFactory messageFactory;
 
-    public BackupStrategy(PeerConfiguration configuration, MessageFactory messageFactory) {
+    public BackupStrategy(PeerConfiguration configuration) {
         this.configuration = configuration;
-        this.messageFactory = messageFactory;
     }
     
     public abstract void backup(StoredTracker storedTracker, Message message) throws Exception;

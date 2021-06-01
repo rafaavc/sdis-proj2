@@ -16,11 +16,9 @@ import utils.Logger.DebugType;
 public class ServerRouter implements Router {
     
     private final PeerConfiguration configuration;
-    private final MessageFactory messageFactory;
 
     public ServerRouter(PeerConfiguration configuration) throws ArgsException {
         this.configuration = configuration;
-        this.messageFactory = new MessageFactory(configuration.getProtocolVersion());
     }
 
     public void handle(Message message, SocketChannel socket, SSLEngine engine, String address) throws Exception {
@@ -34,7 +32,7 @@ public class ServerRouter implements Router {
                 ChordNode node = configuration.getChord().lookup(message.getFileKey()).get();
                 Logger.debug(configuration.getChord().getSelf(), "Replying with " + node.toString());
 
-                response = messageFactory.getLookupResponseMessage(configuration.getPeerId(), message.getFileKey(), node).getBytes();
+                response = MessageFactory.getLookupResponseMessage(configuration.getPeerId(), message.getFileKey(), node).getBytes();
                 break;
 
             case GETPREDECESSOR:
@@ -42,7 +40,7 @@ public class ServerRouter implements Router {
                 ChordNode predecessorNode = configuration.getChord().getPredecessor();
                 Logger.debug(configuration.getChord().getSelf(), "Replying with " + predecessorNode);
 
-                response = messageFactory.getPredecessorMessage(configuration.getPeerId(), predecessorNode).getBytes();
+                response = MessageFactory.getPredecessorMessage(configuration.getPeerId(), predecessorNode).getBytes();
                 break;
 
             case NOTIFY:

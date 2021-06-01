@@ -1,10 +1,7 @@
 package actions;
 
 import configuration.PeerConfiguration;
-import configuration.ProtocolVersion;
-import messages.MessageFactory;
 import sslengine.SSLClient;
-import utils.Logger;
 
 public class CheckDeleted {
     private final PeerConfiguration configuration;

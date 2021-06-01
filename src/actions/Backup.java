@@ -6,10 +6,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import configuration.PeerConfiguration;
-import configuration.ProtocolVersion;
 import files.Chunk;
 import files.ChunkedFile;
-import messages.MessageFactory;
 import messages.trackers.StoredTracker;
 import state.FileInfo;
 import utils.Logger;
@@ -37,11 +35,7 @@ public class Backup extends Action {
 
             Map<Chunk, byte[]> chunksToSend = new HashMap<>();
 
-            for (Chunk chunk : file.getChunks())
-            {   
-                // byte[] msg = new MessageFactory(new ProtocolVersion(1, 0)).getPutchunkMessage(this.configuration.getPeerId(), file.getFileId(), desiredReplicationDegree, chunk.getChunkNo(), chunk.getData());
-                // chunksToSend.put(chunk, msg);
-            }
+
 
             Logger.log("I split the file into these chunks: " + chunksToSend);
 

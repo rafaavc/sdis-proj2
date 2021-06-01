@@ -5,7 +5,6 @@ from subprocess import PIPE
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-n", dest="n", default=5, type=int)
-parser.add_argument("-v", dest="v", default="1.0", type=str)
 
 args = parser.parse_args()
 
@@ -111,7 +110,6 @@ def run_peer(peerId, first=False, firstServerPort=-1):
     runArgs = [
         "java",
         "Main",
-        args.v,
         "peer"+str(peerId),
         str(get_server_port(peerId))
     ]

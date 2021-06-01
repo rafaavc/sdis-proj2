@@ -8,10 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import chord.ChordNode;
-import configuration.ProtocolVersion;
 
 public class Message {
-    private final ProtocolVersion version;
     private final int senderId;
     private final Integer fileKey;
     private ChordNode node = null;
@@ -22,9 +20,9 @@ public class Message {
     private byte[] body = null;
 
     public static enum MessageType {
-        PUTCHUNK,
+        PUTFILE,
         STORED,
-        GETCHUNK,
+        GETFILE,
         CHUNK,
         DELETE,
         REMOVED,
@@ -40,9 +38,9 @@ public class Message {
     public static final HashMap<MessageType, String> messageTypeStrings = new HashMap<>();
 
     static {
-        messageTypeStrings.put(MessageType.PUTCHUNK, "PUTCHUNK");
+        messageTypeStrings.put(MessageType.PUTFILE, "PUTFILE");
         messageTypeStrings.put(MessageType.STORED, "STORED");
-        messageTypeStrings.put(MessageType.GETCHUNK, "GETCHUNK");
+        messageTypeStrings.put(MessageType.GETFILE, "GETFILE");
         messageTypeStrings.put(MessageType.CHUNK, "CHUNK");
         messageTypeStrings.put(MessageType.DELETE, "DELETE");
         messageTypeStrings.put(MessageType.REMOVED, "REMOVED");
@@ -54,55 +52,54 @@ public class Message {
         messageTypeStrings.put(MessageType.NOTIFY, "NOTIFY");
     }
 
-    public Message(ProtocolVersion version, int senderId, Integer fileKey) {
-        this.version = version;
+    public Message(int senderId, Integer fileKey) {
         this.senderId = senderId;
         this.fileKey = fileKey;
     }
 
-    public Message(ProtocolVersion version, int senderId) {
-        this(version, senderId, null);
+    public Message(int senderId) {
+        this(senderId, null);
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, ChordNode node) {
-        this(version, senderId, fileKey);
+    public Message(MessageType messageType, int senderId, int fileKey, ChordNode node) {
+        this(senderId, fileKey);
         this.messageType = messageType;
         this.node = node;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, ChordNode node) {
-        this(version, senderId);
+    public Message(MessageType messageType, int senderId, ChordNode node) {
+        this(senderId);
         this.messageType = messageType;
         this.node = node;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId) {
-        this(version, senderId, -1);
+    public Message(MessageType messageType, int senderId) {
+        this(senderId, -1);
         this.messageType = messageType;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey) {
-        this(version, senderId, fileKey);
+    public Message(MessageType messageType, int senderId, int fileKey) {
+        this(senderId, fileKey);
         this.messageType = messageType;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, int chunkNo) {
-        this(version, messageType, senderId, fileKey);
+    public Message(MessageType messageType, int senderId, int fileKey, int chunkNo) {
+        this(messageType, senderId, fileKey);
         this.chunkNo = chunkNo;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, int chunkNo, int replicationDeg) {
-        this(version, messageType, senderId, fileKey, chunkNo);
+    public Message(MessageType messageType, int senderId, int fileKey, int chunkNo, int replicationDeg) {
+        this(messageType, senderId, fileKey, chunkNo);
         this.replicationDeg = (short) replicationDeg;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, int chunkNo, byte[] body) {
-        this(version, messageType, senderId, fileKey, chunkNo);
+    public Message(MessageType messageType, int senderId, int fileKey, int chunkNo, byte[] body) {
+        this(messageType, senderId, fileKey, chunkNo);
         this.body = body;
     }
 
-    public Message(ProtocolVersion version, MessageType messageType, int senderId, int fileKey, int chunkNo, int replicationDeg, byte[] body) {
-        this(version, messageType, senderId, fileKey, chunkNo, replicationDeg);
+    public Message(MessageType messageType, int senderId, int fileKey, int chunkNo, int replicationDeg, byte[] body) {
+        this(messageType, senderId, fileKey, chunkNo, replicationDeg);
         this.body = body;
     }
 
@@ -153,10 +150,6 @@ public class Message {
         return senderId;
     }
 
-    public ProtocolVersion getVersion() {
-        return version;
-    }
-
     public ChordNode getNode() throws Exception {
         if (this.node == null) throw new Exception("Trying to access node of message without this field.");
         return node;
@@ -189,7 +182,6 @@ public class Message {
 
     private List<String> getComponents() {
         List<String> components = new ArrayList<>();
-        components.add(version.toString());
         components.add(messageTypeStrings.get(messageType));
         components.add(String.valueOf(senderId));
         if (fileKey != null) components.add(String.valueOf(fileKey));
@@ -214,7 +206,7 @@ public class Message {
             builder.append(el);
         });
 
-        builder.append(' ' + CRLF + CRLF);
+        builder.append(' ').append(CRLF).append(CRLF);
         String str =  builder.toString();
         byte[] header = str.getBytes();
 

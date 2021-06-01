@@ -20,14 +20,12 @@ import sslengine.SSLPeer;
 import java.lang.Math;
 
 import utils.Logger;
-import utils.Logger.DebugType;
 
 public class Chord {
     private final List<ChordNode> fingerTable = new ArrayList<>();
     private final PeerConfiguration configuration;
     private final ChordNode self;
     private final int m;
-    private final MessageFactory messageFactory;
     private ChordNode predecessor;
     private ChordNode successor;
     private int nextFingerToFix = -1;
@@ -46,7 +44,6 @@ public class Chord {
 
         this.m = 32; // an integer has 32 bits
         this.configuration = configuration;
-        this.messageFactory = new MessageFactory(configuration.getProtocolVersion());
 
         if (preexistingNode == null || turnoff) id = this.generateNodeId(peerAddress);
         else id = this.getCollisionFreeId(peerAddress, preexistingNode);
@@ -224,7 +221,7 @@ public class Chord {
         if (successor.getId() == getId()) return;
 
         Logger.debug(self, "Sending GETPREDECESSOR to " + successor);
-        Message reply = SSLClient.sendQueued(configuration, successor.getInetSocketAddress(), messageFactory.getGetPredecessorMessage(self.getId()), true).get();
+        Message reply = SSLClient.sendQueued(configuration, successor.getInetSocketAddress(), MessageFactory.getGetPredecessorMessage(self.getId()), true).get();
 
         try {
             ChordNode predecessorOfSuccessor = reply.getNode();  // if it has no predecessor it will throw exception
@@ -248,7 +245,7 @@ public class Chord {
     public void notifyPredecessor(ChordNode successor) throws Exception {
         Logger.debug(self, "Sending NOTIFY to successor " + successor);
 
-        SSLClient.sendQueued(configuration, successor.getInetSocketAddress(), messageFactory.getNotifyMessage(self.getId(), self), false);
+        SSLClient.sendQueued(configuration, successor.getInetSocketAddress(), MessageFactory.getNotifyMessage(self.getId(), self), false);
     }
 
     /**
@@ -335,7 +332,7 @@ public class Chord {
         Logger.debug(self, "Using " + peerAddress.getAddress().getHostAddress() + ":" + peerAddress.getPort() + " to LOOKUP!");
 
         CompletableFuture<ChordNode> future = new CompletableFuture<>();
-        Message message = messageFactory.getLookupMessage(id, k);
+        Message message = MessageFactory.getLookupMessage(id, k);
 
         int ntries = 0;
         while ((ntries < 3 || id != 1234) && !future.isDone()) { // only sends exception when the id is 1234

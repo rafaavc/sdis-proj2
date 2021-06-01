@@ -3,18 +3,16 @@ package server.handlers.strategies;
 import java.util.concurrent.TimeUnit;
 
 import configuration.PeerConfiguration;
-import configuration.ProtocolVersion;
 import exceptions.ArgsException;
 import files.FileManager;
 import messages.Message;
 import messages.MessageFactory;
 import messages.trackers.StoredTracker;
-import state.ChunkInfo;
 import utils.Logger;
 
 public class VanillaBackupStrategy extends BackupStrategy {
     public VanillaBackupStrategy(PeerConfiguration configuration) throws ArgsException {
-        super(configuration, new MessageFactory(new ProtocolVersion(1, 0)));
+        super(configuration);
     }
 
     public void backup(StoredTracker storedTracker, Message msg) throws Exception {

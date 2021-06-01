@@ -5,10 +5,7 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 
 import configuration.PeerConfiguration;
-import configuration.ProtocolVersion;
-import files.FileManager;
 import messages.Message;
-import messages.MessageFactory;
 import utils.Logger;
 
 public class EnhancedRestoreStrategy extends RestoreStrategy {
@@ -17,10 +14,6 @@ public class EnhancedRestoreStrategy extends RestoreStrategy {
     }
 
     public void sendChunk(Message msg) throws Exception {
-        if (msg.getVersion().equals("1.0")) {
-            new VanillaRestoreStrategy(configuration).sendChunk(msg);
-            return;
-        }
 
         ServerSocket socket = new ServerSocket(0);
 

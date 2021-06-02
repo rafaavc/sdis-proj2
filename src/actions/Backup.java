@@ -61,7 +61,7 @@ public class Backup implements Action {
             if (backingUp) destinationNode = configuration.getChord().lookup(file.getFileKey()).get();
             else destinationNode = configuration.getChord().getSuccessor();
 
-            Message message = MessageFactory.getPutfileMessage(configuration.getPeerId(), file.getFileKey(), (int) Math.ceil(file.getData().length / 15000.), desiredReplicationDegree, alreadyObtainedReplicationDeg);
+            Message message = MessageFactory.getPutfileMessage(configuration.getPeerId(), file.getFileKey(), (int) Math.ceil(file.getData().length / 15000.), desiredReplicationDegree, alreadyObtainedReplicationDeg, file.getData().length);
             Logger.debug(Logger.DebugType.BACKUP, "Sending " + message);
 
             ResultWithData<Integer> result = FileSender.sendFile(configuration, file, destinationNode, message);

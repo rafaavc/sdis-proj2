@@ -5,12 +5,17 @@ import java.io.Serializable;
 public class OthersFileInfo implements Serializable {
     private static final long serialVersionUID = -7039536338647806374L;
 
-    private final int fileKey;
+    private final int fileKey, desiredReplicationDegree;
     private final float size; // KB
     
-    public OthersFileInfo(int fileKey, float size) {
+    public OthersFileInfo(int fileKey, float size, int desiredReplicationDegree) {
         this.fileKey = fileKey;
         this.size = size;
+        this.desiredReplicationDegree = desiredReplicationDegree;
+    }
+
+    public int getDesiredReplicationDegree() {
+        return desiredReplicationDegree;
     }
 
     public float getSize() {

@@ -47,16 +47,13 @@ public class Reclaim {
             List<OthersFileInfo> peerFiles = state.getOthersFiles();
 
             // remover e mandar msg para cada file que seja necessário remover (os que tiverem perceived degree maior que o desired primeiro)
-            Collections.sort(peerFiles, new Comparator<OthersFileInfo>() {
-                @Override
-                public int compare(OthersFileInfo fileInfo1, OthersFileInfo fileInfo2) {
-                    float file1 = fileInfo1.getSize();
-                    float file2 = fileInfo2.getSize();
-                    return (int) file1 - (int) file2; // order in ascending
-                }
+            peerFiles.sort((OthersFileInfo fileInfo1, OthersFileInfo fileInfo2) -> {
+                float file1 = fileInfo1.getSize();
+                float file2 = fileInfo2.getSize();
+                return (int) ((file1 - file2) * 1000); // order in ascending
             });
 
-            Logger.log("Files ordered: " + peerFiles);
+            Logger.debug(Logger.DebugType.RECLAIM, "Files ordered: " + peerFiles);
 
             List<OthersFileInfo> filesToRemove = new ArrayList<>();
 
@@ -67,20 +64,23 @@ public class Reclaim {
                 peerFiles.remove(0);
             }
 
-            Logger.log("files to remove: " + filesToRemove);
+            Logger.debug(Logger.DebugType.RECLAIM, "Files to remove: " + filesToRemove);
 
             FileManager fileManager = new FileManager(this.configuration.getRootDir());
 
-            for (OthersFileInfo file : filesToRemove) {
+            for (OthersFileInfo file : filesToRemove)
+            {
+                byte[] data = fileManager.readBackedUpFile(file.getFileKey());
+                state.deleteOthersFile(file.getFileKey());
+
+                fileManager.deleteBackedUpFile(file.getFileKey());
+
                 CompletableFuture<ResultWithData<Integer>> auxFuture = new CompletableFuture<>();
 
                 Backup backupAction = new Backup(auxFuture, configuration,
-                        new FileRepresentation(file.getFileKey(), fileManager.readBackedUpFile(file.getFileKey())), 1);
+                        new FileRepresentation(file.getFileKey(), data), file.getDesiredReplicationDegree());
 
                 backupAction.execute();
-
-                fileManager.deleteBackedUpFile(file.getFileKey());
-                state.deleteOthersFile(file.getFileKey());
             }
 
             String msg = "Reclaimed space successfuly.";

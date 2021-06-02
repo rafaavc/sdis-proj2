@@ -16,6 +16,7 @@ public class Message {
     private MessageType messageType;
     private short replicationDeg = -1, alreadyPerceivedDegree = -1;
     private int order = -1;
+    private int byteAmount = -1;
 
     private byte[] body = null;
 
@@ -105,10 +106,11 @@ public class Message {
         this.order = nParts;
     }
 
-    public Message(MessageType messageType, int senderId, int fileKey, int nParts, int replicationDegree, int alreadyPerceivedDegree) {
+    public Message(MessageType messageType, int senderId, int fileKey, int nParts, int replicationDegree, int alreadyPerceivedDegree, int byteAmount) {
         this(messageType, senderId, fileKey, replicationDegree);
         this.order = nParts;
         this.alreadyPerceivedDegree = (short) alreadyPerceivedDegree;
+        this.byteAmount = byteAmount;
     }
 
     public Message setNode(String address, int port, int nodeId) throws UnknownHostException {
@@ -133,6 +135,11 @@ public class Message {
 
     public Message setAlreadyPerceivedDegree(short alreadyPerceivedDegree) {
         this.alreadyPerceivedDegree = alreadyPerceivedDegree;
+        return this;
+    }
+
+    public Message setByteAmount(int byteAmount) {
+        this.byteAmount = byteAmount;
         return this;
     }
 
@@ -183,6 +190,11 @@ public class Message {
         return order;
     }
 
+    public int getByteAmount() throws Exception {
+        if (this.byteAmount < 0) throw new Exception("Trying to access byte amount of message without this field.");
+        return byteAmount;
+    }
+
     @Override
     public String toString() {
         List<String> headerComponents = getComponents();
@@ -207,6 +219,7 @@ public class Message {
         if (order != -1) components.add(String.valueOf(order));
         if (replicationDeg != -1) components.add(String.valueOf(replicationDeg));
         if (alreadyPerceivedDegree != -1) components.add(String.valueOf(alreadyPerceivedDegree));
+        if (byteAmount != -1) components.add(String.valueOf(byteAmount));
         if (node != null) {
             components.add(node.getInetAddress().getHostAddress());
             components.add(String.valueOf(node.getPort()));

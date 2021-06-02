@@ -67,7 +67,7 @@ public class BackupHandler extends Handler {
 
                     return MessageFactory.getProcessedNoMessage(configuration.getPeerId());
                 }
-                if (configuration.getPeerState().getMaximumStorage() != -1 && configuration.getPeerState().getStorageAvailable() < message.getBodySizeKB())
+                if (configuration.getPeerState().getMaximumStorage() != -1 && configuration.getPeerState().getStorageAvailable() < message.getByteAmount() / 1000.)
                 {
                     Logger.log("Not enough space available for backup. Redirecting to successor.");
 
@@ -107,7 +107,7 @@ public class BackupHandler extends Handler {
 
                         new FileManager(configuration.getRootDir()).writeBackedupFile(message.getFileKey(), data); // saving the file
 
-                        configuration.getPeerState().addBackedUpFile(new OthersFileInfo(message.getFileKey(), data.length / (float) 1000.));
+                        configuration.getPeerState().addBackedUpFile(new OthersFileInfo(message.getFileKey(), data.length / (float) 1000., message.getReplicationDeg()));
                         Logger.log("Backed up file " + message.getFileKey() + "!");
 
                         int perceivedReplicationDegree = sendToSuccessor(message, data, true, message.getAlreadyPerceivedDegree() + 1);

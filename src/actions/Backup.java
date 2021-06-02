@@ -77,7 +77,7 @@ public class Backup implements Action {
                     continue;
                 }
 
-                Message reply = SSLClient.sendQueued(configuration, destinationNode.getInetSocketAddress(), message, true).get();
+                Message reply = SSLClient.sendQueued(configuration, destinationNode, message, true).get();
                 switch (reply.getMessageType()) {
                     case REDIRECT:
                         nodesThatRedirected.add(destinationNode);
@@ -87,9 +87,10 @@ public class Backup implements Action {
                         ChordNode node = destinationNode;
                         configuration.getThreadScheduler().execute(() -> {
                             try {
-                                FileSender.sendFile(configuration, file, node);
+                                Result res = FileSender.sendFile(configuration, file, node);
+                                if (!res.success()) throw new Exception(res.getMessage());
                             } catch (Exception e) {
-                                Logger.error("sending file to " + node, e, true);
+                                Logger.error("sending file to " + node, e, false);
                             }
                         });
                     case PROCESSEDNO:
@@ -100,14 +101,14 @@ public class Backup implements Action {
                         Logger.error("Invalid reply during backing up...");
                 }
 
-                Message successor = SSLClient.sendQueued(configuration, destinationNode.getInetSocketAddress(),
+                Message successor = SSLClient.sendQueued(configuration, destinationNode,
                         MessageFactory.getGetSuccessorMessage(configuration.getPeerId()), true).get();
                 destinationNode = successor.getNode();
             }
 
             // tell the nodes that redirected after the last one who saved to remove their dangling pointers
             for (ChordNode node : nodesThatRedirected)
-                SSLClient.sendQueued(configuration, node.getInetSocketAddress(),
+                SSLClient.sendQueued(configuration, node,
                         MessageFactory.getRemovePointerMessage(configuration.getPeerId(), message.getFileKey()), false);
 
             if (perceivedReplicationDegree > 0)

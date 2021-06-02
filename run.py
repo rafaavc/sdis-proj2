@@ -231,6 +231,7 @@ while running:
             if (startMatch != None):
                 n = int(startMatch.group(1))
                 if (n in processes):
+                    print(processes)
                     print("That id is already in use!")
                     continue
                 print("Starting peer with id " + str(n))

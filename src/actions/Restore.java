@@ -47,7 +47,7 @@ public class Restore {
 
             int count = 0;
             while (true) {
-                Message reply = SSLClient.sendQueued(configuration, destinationNode.getInetSocketAddress(), message, true).get();
+                Message reply = SSLClient.sendQueued(configuration, destinationNode, message, true).get();
                 if (reply.getMessageType() == Message.MessageType.REDIRECT) destinationNode = reply.getNode();
                 else if (reply.getMessageType() == Message.MessageType.PROCESSEDYES) break;
                 else if (reply.getMessageType() == Message.MessageType.PROCESSEDNO) {

@@ -36,7 +36,8 @@ public class Message {
         REDIRECT,
         GETSUCCESSOR,
         REMOVEPOINTER,
-        ADDPOINTER
+        ADDPOINTER,
+        PEERDOWN
     }
 
     private static final String CRLF = new String(new byte[] { 0xD, 0xA });

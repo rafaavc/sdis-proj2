@@ -15,7 +15,7 @@ public class CheckFiles implements Action {
     public void execute() {
         try {
             Logger.debug(Logger.DebugType.CHECK, "Checking files.");
-            SSLClient.sendQueued(configuration, configuration.getChord().getSuccessor().getInetSocketAddress(),
+            SSLClient.sendQueued(configuration, configuration.getChord().getSuccessor(),
                     MessageFactory.getCheckMessage(configuration.getPeerId(), configuration.getChord().getSelf()), false);
         } catch(Exception e) {
             Logger.error("checking files", e, true);

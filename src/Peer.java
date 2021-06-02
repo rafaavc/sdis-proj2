@@ -43,7 +43,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
              Consumer<Integer> send = (Integer i) -> {
                  try {
-                    Future<Message> f = SSLClient.sendQueued(configuration, configuration.getChord().getSuccessor().getInetSocketAddress(), MessageFactory.getLookupMessage(11, 574), true);
+                    Future<Message> f = SSLClient.sendQueued(configuration, configuration.getChord().getSuccessor(), MessageFactory.getLookupMessage(11, 574), true);
                     f.get();
                  } catch(Exception e) {
                     Logger.error(e, true);

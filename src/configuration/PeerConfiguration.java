@@ -9,6 +9,7 @@ import files.FileManager;
 import messages.trackers.ChunkTracker;
 import server.DataBucket;
 import server.ServerRouter;
+import sslengine.SSLClient;
 import sslengine.SSLServer;
 import sslengine.ServerThread;
 import state.PeerState;
@@ -43,6 +44,8 @@ public class PeerConfiguration {
             this.chord = new Chord(this, new InetSocketAddress(ip, serverPort), preexistingNode);
         else 
             this.chord = new Chord(this, new InetSocketAddress(ip, serverPort));
+
+        SSLClient.queue.setConfiguration(this);
 
         this.state = PeerState.read(getRootDir());
         FileManager.createPeerStateAsynchronousChannel(getRootDir());

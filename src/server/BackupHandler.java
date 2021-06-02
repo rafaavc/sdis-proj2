@@ -65,7 +65,7 @@ public class BackupHandler {
                     } catch (Exception e) {
                         Logger.error("saving file data", e, true);
                     }
-                }));
+                }, 300));
 
                 return MessageFactory.getProcessedYesMessage(configuration.getPeerId());
             } catch (Exception e) {

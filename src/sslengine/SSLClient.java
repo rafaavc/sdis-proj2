@@ -1,5 +1,6 @@
 package sslengine;
 
+import chord.ChordNode;
 import sslengine.queue.MessageQueue;
 import utils.Logger;
 import utils.Logger.DebugType;
@@ -119,23 +120,34 @@ public class SSLClient extends SSLPeer{
         });
     }
 
+    public static Future<Message> sendQueued(PeerConfiguration configuration, ChordNode node, Message message, boolean wantReply) {
+        return runSendQueueTask(configuration, (CompletableFuture<Message> future) -> {
+            try {
+                queue.push(node, message, wantReply ? future::complete : null);
+            } catch (Exception e) {
+                Logger.error("pushing message action to queue", e, true);
+            }
+        }, wantReply);
+    }
+
     public static Future<Message> sendQueued(PeerConfiguration configuration, InetSocketAddress address, Message message, boolean wantReply) {
-        CompletableFuture<Message> future = new CompletableFuture<>();
-        Runnable pushTask = () -> {
+        return runSendQueueTask(configuration, (CompletableFuture<Message> future) -> {
             try {
                 queue.push(address, message, wantReply ? future::complete : null);
             } catch (Exception e) {
                 Logger.error("pushing message action to queue", e, true);
             }
-        };
+        }, wantReply);
+    }
 
-        configuration.getThreadScheduler().execute(pushTask);
+    public static Future<Message> runSendQueueTask(PeerConfiguration configuration, Consumer<CompletableFuture<Message>> consumer, boolean wantReply) {
+        CompletableFuture<Message> future = new CompletableFuture<>();
+
+        configuration.getThreadScheduler().execute(() -> consumer.accept(future));
 
         if (!wantReply) future.complete(null);
         return future;
     }
-
-
 
     public void shutdown() throws IOException {
         Logger.debug(DebugType.SSL, "Going to close connection with the server...");

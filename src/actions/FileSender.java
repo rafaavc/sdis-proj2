@@ -7,7 +7,7 @@ import messages.Message;
 import messages.MessageFactory;
 import sslengine.SSLClient;
 import utils.Logger;
-import utils.ResultWithData;
+import utils.Result;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.concurrent.Future;
 public class FileSender {
     private static final String successMessage = "File sent successfully! Replication degree = ";
 
-    public static ResultWithData<Integer> sendFile(PeerConfiguration configuration, FileRepresentation file, ChordNode destinationNode) throws Exception {
+    public static Result sendFile(PeerConfiguration configuration, FileRepresentation file, ChordNode destinationNode) throws Exception {
         Logger.log("Sending the file (key=" + file.getFileKey() + ") up to " + destinationNode);
         Logger.debug(Logger.DebugType.FILETRANSFER, "Sending parts...");
 
@@ -43,7 +43,7 @@ public class FileSender {
                 Message dataMessage = MessageFactory.getDataMessage(configuration.getPeerId(), file.getFileKey(), orderSaved, part);
                 try
                 {
-                    Message dataReply = SSLClient.sendQueued(configuration, destinationNode.getInetSocketAddress(), dataMessage, true).get();
+                    Message dataReply = SSLClient.sendQueued(configuration, destinationNode, dataMessage, true).get();
                     f.complete(dataReply != null);
                 }
                 catch (Exception e)
@@ -56,13 +56,12 @@ public class FileSender {
 
         for (Future<Boolean> f : futures) {
             if (!f.get()) {
-                return new ResultWithData<>(false, "Error while sending data to peer.", 0);
+                return new Result(false, "Error while sending data to peer.");
             }
         }
 
         Logger.debug(Logger.DebugType.FILETRANSFER, "Sent all parts!");
 
-        int perceivedReplicationDegree = -1; // TODO ask for perceived replication degree
-        return new ResultWithData<>(true, successMessage, -1);//perceivedReplicationDegree);
+        return new Result(true, successMessage);
     }
 }

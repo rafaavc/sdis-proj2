@@ -17,6 +17,7 @@ import sslengine.SSLClient;
 import state.PeerState;
 import actions.Backup;
 import actions.Delete;
+import actions.Reclaim;
 import utils.Logger;
 import utils.Result;
 import utils.ResultWithData;
@@ -134,10 +135,10 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
     public Result reclaim(int kb) throws RemoteException {
         CompletableFuture<Result> f = new CompletableFuture<>();
-//        new Reclaim(f, configuration, kb).execute();
 
         try
         {
+            new Reclaim(f, configuration, kb).execute();
             return f.get();
         }
         catch(Exception e)

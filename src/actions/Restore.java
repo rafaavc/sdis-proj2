@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import chord.ChordNode;
-import configuration.PeerConfiguration;·
+import configuration.PeerConfiguration;
 import files.FileManager;
 import messages.Message;
 import messages.MessageFactory;

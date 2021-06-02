@@ -15,6 +15,7 @@ import messages.MessageFactory;
 import sslengine.SSLClient;
 import state.MyFileInfo;
 import state.OthersFileInfo;
+import state.PeerState;
 import utils.Logger;
 import utils.Logger.DebugType;
 
@@ -34,6 +35,8 @@ public class ServerRouter implements Router {
         Logger.debug(message, address);
 
         Message response = null;
+        
+        PeerState state = configuration.getPeerState();
 
         switch(message.getMessageType()) {
             case LOOKUP:
@@ -80,10 +83,10 @@ public class ServerRouter implements Router {
             case GETFILE:
                 Logger.debug(DebugType.RESTORE, "Received GETFILE: " + message);
 
-                if (!configuration.getPeerState().hasBackedUpFile(message.getFileKey()))
+                if (!state.hasBackedUpFile(message.getFileKey()))
                 {
                     Logger.debug(DebugType.RESTORE, "I don't have the file!");
-                    if (configuration.getPeerState().isPointerFile(message.getFileKey())) response = MessageFactory.getRedirectMessage(configuration.getPeerId(), configuration.getChord().getSuccessor());
+                    if (state.isPointerFile(message.getFileKey())) response = MessageFactory.getRedirectMessage(configuration.getPeerId(), configuration.getChord().getSuccessor());
                     else response = MessageFactory.getProcessedNoMessage(configuration.getPeerId());
                     Logger.debug(DebugType.RESTORE, "Sending response " + response);
                 }
@@ -96,13 +99,13 @@ public class ServerRouter implements Router {
                 break;
 
             case REMOVEPOINTER:
-                Logger.debug(DebugType.FILEPOINTER, "Removed pointer (waspointer=" + configuration.getPeerState().isPointerFile(message.getFileKey()) + ") for file " + message.getFileKey());
-                configuration.getPeerState().removePointerFile(message.getFileKey());
+                Logger.debug(DebugType.FILEPOINTER, "Removed pointer (waspointer=" + state.isPointerFile(message.getFileKey()) + ") for file " + message.getFileKey());
+                state.removePointerFile(message.getFileKey());
                 break;
 
             case ADDPOINTER:
-                Logger.debug(DebugType.FILEPOINTER, "Added pointer (waspointer=" + configuration.getPeerState().isPointerFile(message.getFileKey()) + ") for file " + message.getFileKey());
-                configuration.getPeerState().addPointerFile(message.getFileKey());
+                Logger.debug(DebugType.FILEPOINTER, "Added pointer (waspointer=" + state.isPointerFile(message.getFileKey()) + ") for file " + message.getFileKey());
+                state.addPointerFile(message.getFileKey());
                 break;
 
             case CHECK:
@@ -112,20 +115,20 @@ public class ServerRouter implements Router {
                 StringBuilder builder = new StringBuilder();
                 builder.append("%% Check of ").append(sender).append(" by ").append(selfId).append(" %%\nMissing files:\n");
 
-                for (int fileKey : configuration.getPeerState().getFilePointers()) {
+                for (int fileKey : state.getFilePointers()) {
                     if (Chord.isBetween(sender.getId(), fileKey, selfId, false)) {  // if the sender is a successor of the file and is before this node
                         SSLClient.sendQueued(configuration, sender, MessageFactory.getAddPointerMessage(selfId, fileKey), false);
                         builder.append("\t").append(fileKey).append(" (i have pointer)\n");
                     }
                 }
-                for (OthersFileInfo file : configuration.getPeerState().getOthersFiles()) {
+                for (OthersFileInfo file : state.getOthersFiles()) {
                     if (Chord.isBetween(sender.getId(), file.getFileKey(), selfId, false)) { // if the sender is a successor of the file and is before this node
                         SSLClient.sendQueued(configuration, sender, MessageFactory.getAddPointerMessage(selfId, file.getFileKey()), false);
                         builder.append("\t").append(file.getFileKey()).append(" (i backed up)\n");
                     }
                 }
                 builder.append("\nFiles to be deleted:\n");
-                for (int fileKey : configuration.getPeerState().getDeletedFiles()) {
+                for (int fileKey : state.getDeletedFiles()) {
                     if (Chord.isBetween(sender.getId(), fileKey, selfId, false)) { // if the sender is a successor of the file and is before this node
                         SSLClient.sendQueued(configuration, sender, MessageFactory.getDeleteMessage(selfId, fileKey), false);
                         builder.append("\t").append(fileKey).append("\n");
@@ -136,6 +139,18 @@ public class ServerRouter implements Router {
 
             case DELETE:
                 Logger.debug(DebugType.DELETE, "Received delete for file = " + message.getFileKey());
+                if (state.hasBackedUpFile(message.getFileKey()))
+                {
+                    Logger.debug(DebugType.DELETE, "Had bucked up file " + message.getFileKey() + ". Deleting!");
+
+                    state.deleteOthersFile(message.getFileKey());
+                    state.addDeletedFile(message.getFileKey());
+                    FileManager manager = new FileManager(configuration.getRootDir());
+                    manager.deleteBackedUpFile(message.getFileKey());
+
+                    response = MessageFactory.getProcessedYesMessage(configuration.getPeerId());
+                }
+                else response = MessageFactory.getProcessedNoMessage(configuration.getPeerId());
                 break;
 
             default:

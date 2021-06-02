@@ -76,7 +76,7 @@ public class Backup implements Action {
                     continue;
                 }
 
-                Message reply = SSLClient.sendQueued(configuration, destinationNode, message, true).get();
+                Message reply = SSLClient.sendQueued(destinationNode, message, true).get();
                 switch (reply.getMessageType()) {
                     case REDIRECT:
                         nodesThatRedirected.add(destinationNode);
@@ -100,14 +100,14 @@ public class Backup implements Action {
                         Logger.error("Invalid reply during backing up...");
                 }
 
-                Message successor = SSLClient.sendQueued(configuration, destinationNode,
+                Message successor = SSLClient.sendQueued(destinationNode,
                         MessageFactory.getGetSuccessorMessage(configuration.getPeerId()), true).get();
                 destinationNode = successor.getNode();
             }
 
             // tell the nodes that redirected after the last one who saved to remove their dangling pointers
             for (ChordNode node : nodesThatRedirected)
-                SSLClient.sendQueued(configuration, node,
+                SSLClient.sendQueued(node,
                         MessageFactory.getRemovePointerMessage(configuration.getPeerId(), message.getFileKey()), false);
 
             if (perceivedReplicationDegree > 0)

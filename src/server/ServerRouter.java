@@ -76,7 +76,6 @@ public class ServerRouter implements Router {
                 Logger.debug(DebugType.FILETRANSFER, "Received DATA: " + message);
 
                 dataBucket.add(message.getFileKey(), message.getOrder(), message.getBody());
-                response = MessageFactory.getProcessedYesMessage(configuration.getPeerId());
                 break;
 
             case GETFILE:
@@ -116,20 +115,20 @@ public class ServerRouter implements Router {
 
                 for (int fileKey : state.getFilePointers()) {
                     if (Chord.isBetween(sender.getId(), fileKey, selfId, false)) {  // if the sender is a successor of the file and is before this node
-                        SSLClient.sendQueued(configuration, sender, MessageFactory.getAddPointerMessage(selfId, fileKey), false);
+                        SSLClient.sendQueued(sender, MessageFactory.getAddPointerMessage(selfId, fileKey), false);
                         builder.append("\t").append(fileKey).append(" (i have pointer)\n");
                     }
                 }
                 for (OthersFileInfo file : state.getOthersFiles()) {
                     if (Chord.isBetween(sender.getId(), file.getFileKey(), selfId, false)) { // if the sender is a successor of the file and is before this node
-                        SSLClient.sendQueued(configuration, sender, MessageFactory.getAddPointerMessage(selfId, file.getFileKey()), false);
+                        SSLClient.sendQueued(sender, MessageFactory.getAddPointerMessage(selfId, file.getFileKey()), false);
                         builder.append("\t").append(file.getFileKey()).append(" (i backed up)\n");
                     }
                 }
                 builder.append("\nFiles to be deleted:\n");
                 for (int fileKey : state.getDeletedFiles()) {
                     if (Chord.isBetween(sender.getId(), fileKey, selfId, false)) { // if the sender is a successor of the file and is before this node
-                        SSLClient.sendQueued(configuration, sender, MessageFactory.getDeleteMessage(selfId, fileKey), false);
+                        SSLClient.sendQueued(sender, MessageFactory.getDeleteMessage(selfId, fileKey), false);
                         builder.append("\t").append(fileKey).append("\n");
                     }
                 }

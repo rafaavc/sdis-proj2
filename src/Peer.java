@@ -43,7 +43,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
              Consumer<Integer> send = (Integer i) -> {
                  try {
-                    Future<Message> f = SSLClient.sendQueued(configuration, configuration.getChord().getSuccessor(), MessageFactory.getLookupMessage(11, 574), true);
+                    Future<Message> f = SSLClient.sendQueued(configuration.getChord().getSuccessor(), MessageFactory.getLookupMessage(11, 574), true);
                     f.get();
                  } catch(Exception e) {
                     Logger.error(e, true);
@@ -62,16 +62,6 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
     }
 
     public Result backup(String filePath, int desiredReplicationDegree) throws RemoteException {
-        Path path = Paths.get(filePath);
-        String fileName = path.getFileName().toString();
-
-        if (getPeerState().ownsFileWithName(fileName)) 
-        {
-            int fileKey = getPeerState().getFileKey(fileName);
-            Logger.log("The file " + fileName + " had an older version. Deleting it.");
-
-            new Delete(new CompletableFuture<>(), configuration, fileKey).execute();
-        }
 
         CompletableFuture<Result> f = new CompletableFuture<>();
         

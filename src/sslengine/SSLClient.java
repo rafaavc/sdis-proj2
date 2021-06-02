@@ -121,8 +121,8 @@ public class SSLClient extends SSLPeer{
         });
     }
 
-    public static Future<Message> sendQueued(PeerConfiguration configuration, ChordNode node, Message message, boolean wantReply) {
-        return runSendQueueTask(configuration, (CompletableFuture<Message> future) -> {
+    public static Future<Message> sendQueued(ChordNode node, Message message, boolean wantReply) {
+        return runSendQueueTask((CompletableFuture<Message> future) -> {
             try {
                 queue.push(node, message, wantReply ? future::complete : null);
             } catch (Exception e) {
@@ -131,8 +131,8 @@ public class SSLClient extends SSLPeer{
         }, wantReply);
     }
 
-    public static Future<Message> sendQueued(PeerConfiguration configuration, InetSocketAddress address, Message message, boolean wantReply) {
-        return runSendQueueTask(configuration, (CompletableFuture<Message> future) -> {
+    public static Future<Message> sendQueued(InetSocketAddress address, Message message, boolean wantReply) {
+        return runSendQueueTask((CompletableFuture<Message> future) -> {
             try {
                 queue.push(address, message, wantReply ? future::complete : null);
             } catch (Exception e) {
@@ -141,10 +141,10 @@ public class SSLClient extends SSLPeer{
         }, wantReply);
     }
 
-    public static Future<Message> runSendQueueTask(PeerConfiguration configuration, Consumer<CompletableFuture<Message>> consumer, boolean wantReply) {
+    public static Future<Message> runSendQueueTask(Consumer<CompletableFuture<Message>> consumer, boolean wantReply) {
         CompletableFuture<Message> future = new CompletableFuture<>();
 
-        configuration.getThreadScheduler().execute(() -> consumer.accept(future));
+        consumer.accept(future);
 
         if (!wantReply) future.complete(null);
         return future;

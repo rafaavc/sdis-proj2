@@ -51,15 +51,20 @@ public class FileBucket {
 
             if (parts.size() > goal) Logger.error("Got more parts than needed! (" + parts.size() + "/" + goal + ")");
         }
-        count++;
-        if (count >= timeout)
-        {
-            onComplete.accept(null);
-            future.cancel(false);
+        synchronized(this) {
+            count++;
+            if (count >= timeout)
+            {
+                onComplete.accept(null);
+                future.cancel(false);
+            }
         }
     }
 
     public void add(int partNumeration, byte[] data) {
         parts.put(partNumeration, new FilePart(data, data.length));
+        synchronized(this) {
+            count = 0;
+        }
     }
 }

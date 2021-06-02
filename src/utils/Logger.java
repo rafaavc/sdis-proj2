@@ -29,14 +29,14 @@ public class Logger {
 //        setActive(DebugType.MESSAGE);
 //        setActive(DebugType.CHORD);
 //        setActive(DebugType.QUEUE);
-//        setActive(DebugType.BACKUP);
+        setActive(DebugType.BACKUP);
 //        setActive(DebugType.FILEBUCKET);
 //        setActive(DebugType.FILETRANSFER);
-//        setActive(DebugType.RESTORE);
-//        setActive(DebugType.RECLAIM);
+        setActive(DebugType.RESTORE);
+        setActive(DebugType.RECLAIM);
 //        setActive(DebugType.FILEPOINTER);
 //        setActive(DebugType.CHECK);
-//        setActive(DebugType.DELETE);
+        setActive(DebugType.DELETE);
     }
 
     public static void setActive(DebugType type) {

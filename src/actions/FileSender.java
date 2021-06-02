@@ -9,11 +9,6 @@ import sslengine.SSLClient;
 import utils.Logger;
 import utils.Result;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-
 public class FileSender {
     private static final String successMessage = "File sent successfully! Replication degree = ";
 
@@ -22,7 +17,6 @@ public class FileSender {
         Logger.debug(Logger.DebugType.FILETRANSFER, "Sending parts...");
 
         int totalAmount = 0, order = 0;
-        List<Future<Boolean>> futures = new ArrayList<>();
         while (totalAmount != file.getData().length)
         {
             int left = file.getData().length - totalAmount;
@@ -35,29 +29,18 @@ public class FileSender {
             totalAmount += amount;
             order++;
 
-            CompletableFuture<Boolean> f = new CompletableFuture<>();
-            futures.add(f);
-
             int orderSaved = order;
             configuration.getThreadScheduler().execute(() -> {
                 Message dataMessage = MessageFactory.getDataMessage(configuration.getPeerId(), file.getFileKey(), orderSaved, part);
                 try
                 {
-                    Message dataReply = SSLClient.sendQueued(configuration, destinationNode, dataMessage, true).get();
-                    f.complete(dataReply != null);
+                    SSLClient.sendQueued(destinationNode, dataMessage, false);
                 }
                 catch (Exception e)
                 {
-                    Logger.error("sending file and waiting for data message reply");
-                    f.complete(false);
+                    Logger.error("sending file and waiting for data message reply", e, false);
                 }
             });
-        }
-
-        for (Future<Boolean> f : futures) {
-            if (!f.get()) {
-                return new Result(false, "Error while sending data to peer.");
-            }
         }
 
         Logger.debug(Logger.DebugType.FILETRANSFER, "Sent all parts!");

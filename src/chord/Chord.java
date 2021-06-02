@@ -250,7 +250,7 @@ public class Chord {
         if (successor == null || successor.getId() == getId()) return;
 
         Logger.debug(self, "Sending GETPREDECESSOR to " + successor);
-        Message reply = SSLClient.sendQueued(configuration, successor, MessageFactory.getGetPredecessorMessage(self.getId()), true).get();
+        Message reply = SSLClient.sendQueued(successor, MessageFactory.getGetPredecessorMessage(self.getId()), true).get();
 
         try {
             ChordNode predecessorOfSuccessor = reply.getNode();  // if it has no predecessor it will throw exception
@@ -274,7 +274,7 @@ public class Chord {
     public void notifyPredecessor(ChordNode successor) throws Exception {
         Logger.debug(self, "Sending NOTIFY to successor " + successor);
 
-        SSLClient.sendQueued(configuration, successor, MessageFactory.getNotifyMessage(self.getId(), self), false);
+        SSLClient.sendQueued(successor, MessageFactory.getNotifyMessage(self.getId(), self), false);
     }
 
     /**
@@ -369,7 +369,7 @@ public class Chord {
         while ((ntries < 3 || id != 1234) && !future.isDone()) { // only sends exception when the id is 1234
             Logger.debug(self, "Sending LOOKUP of key " + k + " to " + node.getInetSocketAddress());
 
-            Future<Message> f = SSLClient.sendQueued(configuration, node, message, true);
+            Future<Message> f = SSLClient.sendQueued(node, message, true);
             try {
                 Message reply = f.get();
                 future.complete(reply == null ? null : reply.getNode());
@@ -393,7 +393,7 @@ public class Chord {
         while ((ntries < 3 || id != 1234) && !future.isDone()) { // only sends exception when the id is 1234
             Logger.debug(self, "Sending LOOKUP of key " + k + " to " + address);
 
-            Future<Message> f = SSLClient.sendQueued(configuration, address, message, true);
+            Future<Message> f = SSLClient.sendQueued(address, message, true);
             try {
                 Message reply = f.get();
                 future.complete(reply == null ? null : reply.getNode());
@@ -428,7 +428,7 @@ public class Chord {
         {
             ChordNode node = i == -1 ? successor : newSuccessorsSuccessors.get(i);
             try {
-                Message reply = SSLClient.sendQueued(configuration, node, MessageFactory.getGetSuccessorMessage(getId()), true).get();
+                Message reply = SSLClient.sendQueued(node, MessageFactory.getGetSuccessorMessage(getId()), true).get();
                 if (reply == null || reply.getNode().getId() == getId()) break;
                 newSuccessorsSuccessors.add(reply.getNode());
             }

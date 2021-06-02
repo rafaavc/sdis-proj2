@@ -34,14 +34,14 @@ public class Delete {
                     return;
                 }
 
-                Message reply = SSLClient.sendQueued(configuration, destinationNode, MessageFactory.getDeleteMessage(configuration.getPeerId(), fileKey), true).get();
+                Message reply = SSLClient.sendQueued(destinationNode, MessageFactory.getDeleteMessage(configuration.getPeerId(), fileKey), true).get();
                 if (reply == null) {
                     future.complete(new Result(false, "Couldn't get reply to DELETE to " + destinationNode));
                     return;
                 }
                 
                 if (reply.getMessageType() == MessageType.PROCESSEDYES) {
-                    Message successor = SSLClient.sendQueued(configuration, destinationNode, MessageFactory.getGetSuccessorMessage(configuration.getPeerId()), true).get();
+                    Message successor = SSLClient.sendQueued(destinationNode, MessageFactory.getGetSuccessorMessage(configuration.getPeerId()), true).get();
                     if (successor == null) {
                         future.complete(new Result(false, "Couldn't get reply to GETSUCCESSOR to " + destinationNode));
                         return;

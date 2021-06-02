@@ -1,7 +1,7 @@
 package utils;
 
-import exceptions.ArgsException;
-import exceptions.ArgsException.Type;
+import configuration.ArgsException;
+import configuration.ArgsException.Type;
 
 public class IntParser {
     public static int parse(String value) throws ArgsException {

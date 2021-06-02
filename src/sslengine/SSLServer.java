@@ -1,26 +1,20 @@
 package sslengine;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.SelectorProvider;
-import java.util.Iterator;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-
 import messages.Message;
 import messages.MessageParser;
 import server.Router;
 import utils.Logger;
 import utils.Logger.DebugType;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.*;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Iterator;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class SSLServer extends SSLPeer {
 
@@ -156,12 +150,7 @@ public class SSLServer extends SSLPeer {
     public void stop(){
         this.available = false;
         executor.shutdown();
-        try {
-            if (!threadpool.awaitTermination(2, TimeUnit.SECONDS)) threadpool.shutdown();
-        } catch (InterruptedException e) {
-            Logger.error("waiting for threadpool termination");
-            threadpool.shutdown();
-        }
+        threadpool.shutdown();
         selector.wakeup();
     }
 

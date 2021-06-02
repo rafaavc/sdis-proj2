@@ -24,14 +24,6 @@ public class MyFileInfo implements Serializable {
         return byteAmount;
     }
 
-    public int getPerceivedReplicationDegree() {
-        return perceivedReplicationDegree;
-    }
-
-    public int getDesiredReplicationDegree() {
-        return desiredReplicationDegree;
-    }
-
     public int getFileKey() {
         return fileKey;
     }
@@ -42,6 +34,6 @@ public class MyFileInfo implements Serializable {
 
     @Override
     public String toString() {
-        return fileName + ": " + fileKey + ", desired rep = " + desiredReplicationDegree + "\n";
+        return fileName + ": " + fileKey + " (desired=" + desiredReplicationDegree + ", perceived=" + perceivedReplicationDegree + ")";
     }
 }

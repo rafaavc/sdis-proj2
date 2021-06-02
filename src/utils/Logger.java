@@ -1,11 +1,11 @@
 package utils;
 
+import chord.ChordNode;
+import messages.Message;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
-import chord.ChordNode;
-import messages.Message;
 
 public class Logger {
     public enum DebugType {
@@ -88,9 +88,5 @@ public class Logger {
 
     public static void log(Object obj) {
         System.out.println(obj);
-    }
-
-    public static void todo(Object obj) {
-        System.out.println("[TODO] " + obj.getClass().getName());
     }
 }

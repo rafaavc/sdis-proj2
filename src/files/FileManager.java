@@ -1,5 +1,9 @@
 package files;
 
+import configuration.ArgsException;
+import configuration.ArgsException.Type;
+import state.PeerState;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -7,10 +11,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-
-import exceptions.ArgsException;
-import exceptions.ArgsException.Type;
-import state.PeerState;
 
 public class FileManager {
     private final String rootDir;

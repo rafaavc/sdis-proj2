@@ -1,5 +1,12 @@
 package chord;
 
+import configuration.PeerConfiguration;
+import messages.Message;
+import messages.MessageFactory;
+import sslengine.SSLClient;
+import sslengine.SSLPeer;
+import utils.Logger;
+
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -14,13 +21,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import configuration.PeerConfiguration;
-import messages.Message;
-import messages.MessageFactory;
-import sslengine.SSLClient;
-import sslengine.SSLPeer;
-import utils.Logger;
 
 public class Chord {
     private final List<ChordNode> fingerTable = new ArrayList<>();

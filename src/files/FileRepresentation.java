@@ -1,8 +1,8 @@
 package files;
 
-import java.io.File;
-
 import chord.Chord;
+
+import java.io.File;
 
 public class FileRepresentation {
     private final int fileKey;
@@ -16,11 +16,6 @@ public class FileRepresentation {
     public FileRepresentation(int fileKey, byte[] data) throws Exception {
         this.fileKey = fileKey;
         this.data = data;
-    }
-
-    public FileRepresentation(int fileKey, String path) throws Exception {
-        this.fileKey = fileKey;
-        this.data = new FileManager().read(path);
     }
 
     public FileRepresentation(String path) throws Exception {

@@ -1,24 +1,21 @@
 package sslengine;
 
+import chord.ChordNode;
+import messages.Message;
+import messages.MessageParser;
+import sslengine.queue.MessageQueue;
+import utils.Logger;
+import utils.Logger.DebugType;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-
-import chord.ChordNode;
-import configuration.PeerConfiguration;
-import messages.Message;
-import messages.MessageParser;
-import sslengine.queue.MessageQueue;
-import utils.Logger;
-import utils.Logger.DebugType;
 
 public class SSLClient extends SSLPeer{
 
@@ -27,14 +24,6 @@ public class SSLClient extends SSLPeer{
     private final SSLEngine engine;
     private SocketChannel socket;
     public final static MessageQueue queue = new MessageQueue();
-
-    public SSLEngine getEngine() {
-        return engine;
-    }
-
-    public SocketChannel getSocket() {
-        return socket;
-    }
 
     public SSLClient(String address, int port) throws Exception {
         this("TLSv1.2", address, port);
@@ -65,19 +54,6 @@ public class SSLClient extends SSLPeer{
 
     public void write(Message message) throws Exception {
         write(this.socket, this.engine, message.getBytes());
-    }
-
-    public void write(byte[] message) throws Exception {
-        write(this.socket, this.engine, message);
-    }
-
-    public void read() throws Exception {
-        read(null);
-    }
-
-    public void read(BiConsumer<byte[], Integer> consumer) throws Exception {
-        ReadResult msg = read(this.socket, this.engine);
-        if (consumer != null) consumer.accept(msg.getData().array(), msg.getBytesRead());
     }
 
     public Message readReply(int maxCount) throws InterruptedException {

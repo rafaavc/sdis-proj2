@@ -1,9 +1,5 @@
 package actions;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 import chord.ChordNode;
 import configuration.PeerConfiguration;
 import files.FileRepresentation;
@@ -14,10 +10,14 @@ import state.MyFileInfo;
 import utils.Logger;
 import utils.Result;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 public class Backup implements Action {
     private final PeerConfiguration configuration;
     private final String filePath;
-    private final int desiredReplicationDegree, alreadyObtainedReplicationDeg;
+    private final int desiredReplicationDegree;
     private final CompletableFuture<Result> future;
     private final boolean saveToState;
     private final FileRepresentation file;
@@ -28,7 +28,6 @@ public class Backup implements Action {
         this.desiredReplicationDegree = desiredReplicationDegree;
         this.future = future;
         file = new FileRepresentation(filePath);
-        alreadyObtainedReplicationDeg = 0;
         saveToState = true;
     }
 
@@ -39,7 +38,6 @@ public class Backup implements Action {
         this.future = future;
         this.file = file;
         saveToState = false;
-        alreadyObtainedReplicationDeg = 0;
     }
 
     public void execute() {
@@ -49,7 +47,7 @@ public class Backup implements Action {
             ChordNode destinationNode = configuration.getChord().lookup(file.getFileKey()).get();
 
             Message message = MessageFactory.getPutfileMessage(configuration.getPeerId(), file.getFileKey(),
-                    (int) Math.ceil(file.getData().length / 15000.), desiredReplicationDegree, alreadyObtainedReplicationDeg, file.getData().length);
+                    (int) Math.ceil(file.getData().length / 15000.), desiredReplicationDegree, file.getData().length);
             Logger.debug(Logger.DebugType.BACKUP, "Sending " + message);
 
 

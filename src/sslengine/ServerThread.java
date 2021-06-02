@@ -1,5 +1,7 @@
 package sslengine;
 
+import utils.Logger;
+
 public class ServerThread implements Runnable {
 
     private final SSLServer server;
@@ -17,7 +19,7 @@ public class ServerThread implements Runnable {
         try {
             this.server.start();
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.error("server running", e, true);
         }
     }
 }

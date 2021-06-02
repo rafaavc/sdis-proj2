@@ -1,12 +1,12 @@
+import configuration.ArgsException;
+import configuration.ArgsException.Type;
+import configuration.ClientInterface;
+import utils.Logger;
+import utils.Result;
+
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-
-import utils.Result;
-import configuration.ClientInterface;
-import exceptions.ArgsException;
-import exceptions.ArgsException.Type;
-import utils.Logger;
 
 public class TestApp {
     public static void main(String[] args) throws Exception {
@@ -71,14 +71,6 @@ public class TestApp {
                     break;
                 case "FINGERS":
                     Logger.log(stub.getFingerTableString());
-                    break;
-                case "SSL": case "SEND_MESSAGE":
-                    if (args.length < 3) {
-                        Logger.error("To send message I need the number of threads.");
-                        System.exit(1);
-                    }
-                    stub.sendMessageToServer(Integer.parseInt(args[2]));
-                    result = new Result(true, "Sent messages!");
                     break;
                 default:
                     Logger.error("The operation '" + args[1] + "' doesn't exist.");

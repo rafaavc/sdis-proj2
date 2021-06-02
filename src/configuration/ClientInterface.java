@@ -1,18 +1,17 @@
 package configuration;
 
+import state.PeerState;
+import utils.Result;
+
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-import utils.Result;
-import state.PeerState;
-
 public interface ClientInterface extends Remote {
-    public void hi() throws RemoteException;
-    public void sendMessageToServer(int n) throws RemoteException;
-    public PeerState getPeerState() throws RemoteException;
-    public String getFingerTableString() throws RemoteException;
-    public Result backup(String filePath, int replicationDegree) throws RemoteException;
-    public Result restore(String fileName) throws RemoteException;
-    public Result delete(String fileName) throws RemoteException;
-    public Result reclaim(int kb) throws RemoteException;
+    void hi() throws RemoteException;
+    PeerState getPeerState() throws RemoteException;
+    String getFingerTableString() throws RemoteException;
+    Result backup(String filePath, int replicationDegree) throws RemoteException;
+    Result restore(String fileName) throws RemoteException;
+    Result delete(String fileName) throws RemoteException;
+    Result reclaim(int kb) throws RemoteException;
 }

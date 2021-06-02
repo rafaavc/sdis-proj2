@@ -1,12 +1,12 @@
 package messages;
 
+import chord.ChordNode;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-
-import chord.ChordNode;
 
 public class Message {
     private final int senderId;
@@ -35,8 +35,7 @@ public class Message {
         REDIRECT,
         GETSUCCESSOR,
         REMOVEPOINTER,
-        ADDPOINTER,
-        PEERDOWN
+        ADDPOINTER
     }
 
     private static final String CRLF = new String(new byte[] { 0xD, 0xA });
@@ -87,10 +86,9 @@ public class Message {
         this.order = nParts;
     }
 
-    public Message(MessageType messageType, int senderId, int fileKey, int nParts, int replicationDegree, int alreadyPerceivedDegree, int byteAmount) {
+    public Message(MessageType messageType, int senderId, int fileKey, int nParts, int replicationDegree, int byteAmount) {
         this(messageType, senderId, fileKey, replicationDegree);
         this.order = nParts;
-        this.alreadyPerceivedDegree = (short) alreadyPerceivedDegree;
         this.byteAmount = byteAmount;
     }
 
@@ -111,11 +109,6 @@ public class Message {
 
     public Message setReplicationDeg(short replicationDeg) {
         this.replicationDeg = replicationDeg;
-        return this;
-    }
-
-    public Message setAlreadyPerceivedDegree(short alreadyPerceivedDegree) {
-        this.alreadyPerceivedDegree = alreadyPerceivedDegree;
         return this;
     }
 
@@ -159,11 +152,6 @@ public class Message {
     public short getReplicationDeg() throws Exception {
         if (this.replicationDeg < 0) throw new Exception("Trying to access replication degree of message without this field.");
         return replicationDeg;
-    }
-
-    public short getAlreadyPerceivedDegree() throws Exception {
-        if (this.alreadyPerceivedDegree < 0) throw new Exception("Trying to access already perceived replication degree of message without this field.");
-        return alreadyPerceivedDegree;
     }
 
     public int getOrder() throws Exception {

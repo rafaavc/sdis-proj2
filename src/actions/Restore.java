@@ -1,7 +1,5 @@
 package actions;
 
-import java.util.concurrent.CompletableFuture;
-
 import chord.ChordNode;
 import configuration.PeerConfiguration;
 import files.FileManager;
@@ -12,6 +10,8 @@ import sslengine.SSLClient;
 import state.MyFileInfo;
 import utils.Logger;
 import utils.Result;
+
+import java.util.concurrent.CompletableFuture;
 
 
 public class Restore {

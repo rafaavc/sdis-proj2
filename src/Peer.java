@@ -1,23 +1,14 @@
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.function.Consumer;
-
 import actions.*;
 import configuration.ClientInterface;
 import configuration.PeerConfiguration;
-import messages.Message;
-import messages.MessageFactory;
-import sslengine.SSLClient;
 import state.PeerState;
 import utils.Logger;
 import utils.Result;
+
+import java.io.IOException;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.concurrent.CompletableFuture;
 
 public class Peer extends UnicastRemoteObject implements ClientInterface {
     private static final long serialVersionUID = 5157944159616018684L;
@@ -36,30 +27,6 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
     }
 
     /* RMI interface */
-
-    public void sendMessageToServer(int n) throws RemoteException {
-        try {
-             ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(50);
-
-             Consumer<Integer> send = (Integer i) -> {
-                 try {
-                    Future<Message> f = SSLClient.sendQueued(configuration.getChord().getSuccessor(), MessageFactory.getLookupMessage(11, 574), true);
-                    f.get();
-                 } catch(Exception e) {
-                    Logger.error(e, true);
-                 }
-             };
-
-             for (int i = 0; i < n; i++) {
-                 executor.execute(() -> send.accept(1));
-
-                 // Thread.sleep(50 + (int) (Math.random() * 50));
-             }
-            
-        } catch (Exception e) {
-            Logger.error(e, true);
-        }
-    }
 
     public Result backup(String filePath, int desiredReplicationDegree) throws RemoteException {
 

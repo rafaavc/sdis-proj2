@@ -1,9 +1,5 @@
 package actions;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 import configuration.PeerConfiguration;
 import files.FileManager;
 import files.FileRepresentation;
@@ -11,6 +7,10 @@ import state.OthersFileInfo;
 import state.PeerState;
 import utils.Logger;
 import utils.Result;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class Reclaim {
    private final PeerConfiguration configuration;

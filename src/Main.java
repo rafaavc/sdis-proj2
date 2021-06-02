@@ -1,3 +1,9 @@
+import configuration.ArgsException;
+import configuration.ArgsException.Type;
+import configuration.PeerConfiguration;
+import sslengine.SSLClient;
+import utils.Logger;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -6,13 +12,6 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.concurrent.TimeUnit;
-
-import configuration.PeerConfiguration;
-import exceptions.ArgsException;
-import exceptions.ArgsException.Type;
-import sslengine.SSLClient;
-import utils.Logger;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -25,31 +24,24 @@ public class Main {
 
         Runtime.getRuntime().addShutdownHook(new Thread() { 
             public void run() {
-                Logger.log("Closing SSL server and unbinding from registry..."); 
+            Logger.log("Closing SSL server and unbinding from registry...");
 
-                configuration.getServer().stop();
+            configuration.getServer().stop();
+            SSLClient.queue.destroy();
+            configuration.getThreadScheduler().shutdown();
 
-                SSLClient.queue.destroy();
+            try {
+                peer.writeState();
+            } catch (IOException e1) {
+                Logger.error(e1, true);
+            }
 
-                try {
-                    if (!configuration.getThreadScheduler().awaitTermination(3, TimeUnit.SECONDS))
-                        throw new Exception();
-                } catch(Exception e) {
-                    configuration.getThreadScheduler().shutdown();
-                }
-
-                try {
-                    peer.writeState();
-                } catch (IOException e1) {
-                    Logger.error(e1, true);
-                }
-
-                try {
-                    registry.unbind(configuration.getServiceAccessPoint());
-                    Logger.log("Unbound successfully."); 
-                } catch (RemoteException | NotBoundException e) {
-                    Logger.error("Error unbinding."); 
-                }
+            try {
+                registry.unbind(configuration.getServiceAccessPoint());
+                Logger.log("Unbound successfully.");
+            } catch (RemoteException | NotBoundException e) {
+                Logger.error("Error unbinding.");
+            }
             } 
         });
     }

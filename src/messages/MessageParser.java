@@ -1,13 +1,13 @@
 package messages;
 
-import java.net.UnknownHostException;
-import java.util.Arrays;
-
-import exceptions.ArgsException;
-import exceptions.ArgsException.Type;
+import configuration.ArgsException;
+import configuration.ArgsException.Type;
 import messages.Message.MessageType;
 import utils.IntParser;
 import utils.Logger;
+
+import java.net.UnknownHostException;
+import java.util.Arrays;
 
 public class MessageParser {
 
@@ -47,8 +47,7 @@ public class MessageParser {
                 case PUTFILE:
                     message.setOrder(Integer.parseInt(headerPieces[3]))
                         .setReplicationDeg((short) Integer.parseInt(headerPieces[4]))
-                        .setAlreadyPerceivedDegree((short) Integer.parseInt(headerPieces[5]))
-                        .setByteAmount(Integer.parseInt(headerPieces[6]));
+                        .setByteAmount(Integer.parseInt(headerPieces[5]));
 
                     byte[] body = Arrays.copyOfRange(data, bodyStart, length);
                     message.setBody(body);

@@ -85,11 +85,6 @@ public class MessageQueue {
     }
 
     public void destroy() {
-        try {
-            if (!executor.awaitTermination(2, TimeUnit.SECONDS))
-                executor.shutdown();
-        } catch (InterruptedException e) {
-            executor.shutdown();
-        }
+        executor.shutdown();
     }
 }

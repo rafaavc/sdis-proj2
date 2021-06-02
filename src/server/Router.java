@@ -1,10 +1,9 @@
 package server;
 
-import java.nio.channels.SocketChannel;
+import messages.Message;
 
 import javax.net.ssl.SSLEngine;
-
-import messages.Message;
+import java.nio.channels.SocketChannel;
 
 public interface Router {
     void handle(Message message, SocketChannel socket, SSLEngine engine, String address) throws Exception;

@@ -1,4 +1,4 @@
-package exceptions;
+package configuration;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentMap;
 public class ArgsException extends Exception {
     private static final long serialVersionUID = -714327807018527511L;
 
-    public static enum Type {
+    public enum Type {
         ARGS_LENGTH,
         VERSION_NO,
         CHUNK_NO,

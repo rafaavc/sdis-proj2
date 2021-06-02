@@ -1,12 +1,7 @@
 package configuration;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadLocalRandom;
-
 import chord.Chord;
 import files.FileManager;
-import messages.trackers.ChunkTracker;
 import server.DataBucket;
 import server.ServerRouter;
 import sslengine.SSLClient;
@@ -16,10 +11,13 @@ import state.PeerState;
 import utils.IPFinder;
 import utils.Logger;
 
+import java.net.InetSocketAddress;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadLocalRandom;
+
 public class PeerConfiguration {
     private final String serviceAccessPoint;
     private final PeerState state;
-    private final ChunkTracker chunkTracker;
     private final ScheduledThreadPoolExecutor threadScheduler;
     private final SSLServer server;
     private final Chord chord;
@@ -33,7 +31,6 @@ public class PeerConfiguration {
         this.serviceAccessPoint = serviceAccessPoint;
         
         this.dataBucket = new DataBucket();
-        this.chunkTracker = new ChunkTracker();
         this.threadScheduler = new ScheduledThreadPoolExecutor(30);
 
         String ip = IPFinder.find().getHostAddress();
@@ -69,10 +66,6 @@ public class PeerConfiguration {
         return threadScheduler;
     }
 
-    public int getRandomDelay(int bound) {
-        return ThreadLocalRandom.current().nextInt(bound);
-    }
-
     public int getRandomDelay(int bound, int offset) {
         return ThreadLocalRandom.current().nextInt(bound) + offset;
     }
@@ -91,9 +84,5 @@ public class PeerConfiguration {
 
     public String getServiceAccessPoint() {
         return serviceAccessPoint;
-    }
-
-    public ChunkTracker getChunkTracker() {
-        return chunkTracker;
     }
 }

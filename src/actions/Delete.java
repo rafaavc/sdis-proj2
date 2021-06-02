@@ -1,7 +1,5 @@
 package actions;
 
-import java.util.concurrent.CompletableFuture;
-
 import chord.ChordNode;
 import configuration.PeerConfiguration;
 import messages.Message;
@@ -10,6 +8,8 @@ import messages.MessageFactory;
 import sslengine.SSLClient;
 import utils.Logger;
 import utils.Result;
+
+import java.util.concurrent.CompletableFuture;
 
 public class Delete {
     private final PeerConfiguration configuration;

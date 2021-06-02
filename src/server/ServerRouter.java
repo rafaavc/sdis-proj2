@@ -1,9 +1,5 @@
 package server;
 
-import java.nio.channels.SocketChannel;
-
-import javax.net.ssl.SSLEngine;
-
 import actions.FileSender;
 import chord.Chord;
 import chord.ChordNode;
@@ -17,6 +13,9 @@ import state.OthersFileInfo;
 import state.PeerState;
 import utils.Logger;
 import utils.Logger.DebugType;
+
+import javax.net.ssl.SSLEngine;
+import java.nio.channels.SocketChannel;
 
 public class ServerRouter implements Router {
     

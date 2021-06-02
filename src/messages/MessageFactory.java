@@ -1,7 +1,7 @@
 package messages;
 
 import chord.ChordNode;
-import exceptions.ArgsException;
+import configuration.ArgsException;
 import messages.Message.MessageType;
 
 public class MessageFactory {
@@ -32,13 +32,12 @@ public class MessageFactory {
         return new Message(MessageType.NOTIFY, senderId, node);
     }
 
-    public static Message getPutfileMessage(int senderId, int fileKey, int nParts, int replicationDeg, int alreadyObtainedDeg, int byteAmount) {
+    public static Message getPutfileMessage(int senderId, int fileKey, int nParts, int replicationDeg, int byteAmount) {
         return new Message(MessageType.PUTFILE,
                             senderId,
                             fileKey,
                             nParts,
                             replicationDeg,
-                            alreadyObtainedDeg,
                             byteAmount);
     }
 

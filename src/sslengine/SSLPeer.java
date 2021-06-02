@@ -109,12 +109,12 @@ public abstract class SSLPeer {
                 peerNetData.flip();
 
                 while (peerNetData.hasRemaining()) {
-                    peerAppData.clear(); // ??
+                    peerAppData.clear();
                     SSLEngineResult result = engine.unwrap(peerNetData, peerAppData);
 
                     switch (result.getStatus()) {
                         case OK:
-                            peerAppData.flip(); // ??
+                            peerAppData.flip();
                             bytesRead = result.bytesProduced();
                             break;
 

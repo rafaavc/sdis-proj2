@@ -77,14 +77,14 @@ public class Chord {
                 }
             }, configuration.getRandomDelay(1000, 100), 250, TimeUnit.MILLISECONDS);
 
-            configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
-                try {
-                    stabilize();
-                } catch(Exception e) {
-                    Logger.error(e, true);
-                    Logger.debug(self, "Got exception in stabilize! " + e.getMessage());
-                }
-            }, configuration.getRandomDelay(1000, 100), 250, TimeUnit.MILLISECONDS);
+//            configuration.getThreadScheduler().scheduleWithFixedDelay(() -> {
+//                try {
+//                    stabilize();
+//                } catch(Exception e) {
+//                    Logger.error(e, true);
+//                    Logger.debug(self, "Got exception in stabilize! " + e.getMessage());
+//                }
+//            }, configuration.getRandomDelay(1000, 100), 250, TimeUnit.MILLISECONDS);
 
             configuration.getThreadScheduler().scheduleWithFixedDelay(this::updateSuccessorsSuccessors, configuration.getRandomDelay(2000, 1500), 1000, TimeUnit.MILLISECONDS);
 

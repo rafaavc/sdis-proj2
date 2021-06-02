@@ -67,7 +67,7 @@ public class SSLServer extends SSLPeer {
 
         Logger.debug(DebugType.SSL, "Server ready!");
 
-        while(this.available){
+        while (this.available){
             this.selector.select();
             Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
 

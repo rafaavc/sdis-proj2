@@ -66,19 +66,10 @@ public class MessageFactory {
         return new Message(MessageType.REMOVEPOINTER, senderId, fileKey);
     }
 
-    public static byte[] getStoredMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
-        Message msg = new Message(MessageType.STORED,
-                                    senderId,
-                                    fileKey,
-                                    chunkNo);
-        return msg.getBytes();
-    }
-
-    public static byte[] getDeleteMessage(int senderId, int fileKey) throws ArgsException {
-        Message msg = new Message(MessageType.DELETE,
+    public static Message getDeleteMessage(int senderId, int fileKey) throws ArgsException {
+        return new Message(MessageType.DELETE,
                                     senderId,
                                     fileKey);
-        return msg.getBytes();
     }
 
     public static Message getGetfileMessage(int senderId, int fileKey, ChordNode node) throws ArgsException {
@@ -88,27 +79,11 @@ public class MessageFactory {
                             node);
     }
 
-    public static byte[] getChunkMessage(int senderId, int fileKey, int chunkNo, byte[] body) throws ArgsException {
-        Message msg = new Message(MessageType.CHUNK,
-                                    senderId,
-                                    fileKey,
-                                    chunkNo,
-                                    body);
-        return msg.getBytes();
+    public static Message getCheckMessage(int senderId, ChordNode node) throws ArgsException {
+        return new Message(MessageType.CHECK, senderId, node);
     }
 
-    public static byte[] getRemovedMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
-        Message msg = new Message(MessageType.REMOVED,
-                                    senderId,
-                                    fileKey,
-                                    chunkNo);
-        return msg.getBytes();
-    }
-
-    public static byte[] getFilecheckMessage(int senderId, int fileKey) throws ArgsException {
-        Message msg = new Message(MessageType.FILECHECK,
-                                    senderId,
-                                    fileKey);
-        return msg.getBytes();
+    public static Message getAddPointerMessage(int senderId, int fileKey) {
+        return new Message(MessageType.ADDPOINTER, senderId, fileKey);
     }
 }

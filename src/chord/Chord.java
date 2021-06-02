@@ -170,7 +170,7 @@ public class Chord {
      * Checks if id is between the idLeft and idRight
      * @return whether id is after idLeft and before idRight in cordRing
      */
-    public boolean isBetween(int id, int idLeft, int idRight, boolean inclusiveRight) {
+    public static boolean isBetween(int id, int idLeft, int idRight, boolean inclusiveRight) {
         if (inclusiveRight) {
             if (idLeft <= idRight) return id > idLeft && id <= idRight;
             return id > idLeft || id <= idRight;
@@ -180,11 +180,11 @@ public class Chord {
         return id > idLeft || id < idRight;
     }
 
-    public boolean isBetween(int id, ChordNode left, ChordNode right, boolean inclusiveRight) {
+    public static boolean isBetween(int id, ChordNode left, ChordNode right, boolean inclusiveRight) {
         return isBetween(id, left.getId(), right.getId(), inclusiveRight);
     }
 
-    public boolean isBetween(ChordNode compared, ChordNode left, ChordNode right, boolean inclusiveRight) {
+    public static boolean isBetween(ChordNode compared, ChordNode left, ChordNode right, boolean inclusiveRight) {
         return isBetween(compared.getId(), left, right, inclusiveRight);
     }
 

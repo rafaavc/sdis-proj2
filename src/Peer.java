@@ -9,19 +9,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
 
-import actions.Restore;
+import actions.*;
 import configuration.ClientInterface;
 import configuration.PeerConfiguration;
 import messages.Message;
 import messages.MessageFactory;
 import sslengine.SSLClient;
 import state.PeerState;
-import actions.Backup;
-import actions.Delete;
-import actions.Reclaim;
 import utils.Logger;
 import utils.Result;
-import utils.ResultWithData;
 
 public class Peer extends UnicastRemoteObject implements ClientInterface {
     private static final long serialVersionUID = 5157944159616018684L;
@@ -30,11 +26,9 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
     public Peer(PeerConfiguration configuration) throws Exception {
         this.configuration = configuration;
 
-        Logger.log(this.getPeerState());
+        Logger.log(this.getPeerState() + "\nReady!");
 
-        Logger.log("Ready!");
-
-
+        new CheckFiles(configuration).execute();
     }
 
     public void writeState() throws IOException {

@@ -1,21 +1,20 @@
 package server;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLEngine;
 
 import actions.FileSender;
+import chord.Chord;
 import chord.ChordNode;
 import configuration.PeerConfiguration;
-import exceptions.ArgsException;
 import files.FileManager;
 import files.FileRepresentation;
 import messages.Message;
 import messages.MessageFactory;
-import messages.MessageParser;
-import server.handlers.BackupHandler;
+import sslengine.SSLClient;
+import state.MyFileInfo;
+import state.OthersFileInfo;
 import utils.Logger;
 import utils.Logger.DebugType;
 
@@ -103,6 +102,39 @@ public class ServerRouter implements Router {
             case ADDPOINTER:
                 Logger.debug(DebugType.FILEPOINTER, "Added pointer (waspointer=" + configuration.getPeerState().isPointerFile(message.getFileKey()) + ") for file " + message.getFileKey());
                 configuration.getPeerState().addPointerFile(message.getFileKey());
+                break;
+
+            case CHECK:
+                ChordNode sender = message.getNode();
+                int selfId = configuration.getPeerId();
+
+                StringBuilder builder = new StringBuilder();
+                builder.append("%% Check of ").append(sender).append(" by ").append(selfId).append(" %%\nMissing files:\n");
+
+                for (int fileKey : configuration.getPeerState().getFilePointers()) {
+                    if (Chord.isBetween(sender.getId(), fileKey, selfId, false)) {  // if the sender is a successor of the file and is before this node
+                        SSLClient.sendQueued(configuration, sender.getInetSocketAddress(), MessageFactory.getAddPointerMessage(selfId, fileKey), false);
+                        builder.append("\t").append(fileKey).append(" (i have pointer)\n");
+                    }
+                }
+                for (OthersFileInfo file : configuration.getPeerState().getOthersFiles()) {
+                    if (Chord.isBetween(sender.getId(), file.getFileKey(), selfId, false)) { // if the sender is a successor of the file and is before this node
+                        SSLClient.sendQueued(configuration, sender.getInetSocketAddress(), MessageFactory.getAddPointerMessage(selfId, file.getFileKey()), false);
+                        builder.append("\t").append(file.getFileKey()).append(" (i backed up)\n");
+                    }
+                }
+                builder.append("\nFiles to be deleted:\n");
+                for (int fileKey : configuration.getPeerState().getDeletedFiles()) {
+                    if (Chord.isBetween(sender.getId(), fileKey, selfId, false)) { // if the sender is a successor of the file and is before this node
+                        SSLClient.sendQueued(configuration, sender.getInetSocketAddress(), MessageFactory.getDeleteMessage(selfId, fileKey), false);
+                        builder.append("\t").append(fileKey).append("\n");
+                    }
+                }
+                Logger.debug(DebugType.CHECK, builder.toString());
+                break;
+
+            case DELETE:
+                Logger.debug(DebugType.DELETE, "Received delete for file = " + message.getFileKey());
                 break;
 
             default:

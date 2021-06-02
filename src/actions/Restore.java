@@ -1,8 +1,5 @@
 package actions;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import chord.ChordNode;
@@ -12,7 +9,6 @@ import messages.Message;
 import messages.MessageFactory;
 import server.FileBucket;
 import sslengine.SSLClient;
-import state.ChunkPair;
 import state.MyFileInfo;
 import utils.Logger;
 import utils.Result;
@@ -38,8 +34,6 @@ public class Restore {
             Message message = MessageFactory.getGetfileMessage(configuration.getPeerId(), fileKey, configuration.getChord().getSelf());
             Logger.debug(Logger.DebugType.RESTORE, "Sending " + message);
 
-
-            // TODO send timeout to file bucket as parameter
             configuration.getDataBucket().add(file.getFileKey(), new FileBucket((int) Math.ceil(file.getByteAmount() / 15000.), (byte[] data) -> {
                 try {
                     new FileManager(configuration.getRootDir()).write(file.getFileName(), data);
@@ -51,7 +45,7 @@ public class Restore {
                 }
             }, 500));
 
-            // TODO timeout
+            int count = 0;
             while (true) {
                 Message reply = SSLClient.sendQueued(configuration, destinationNode.getInetSocketAddress(), message, true).get();
                 if (reply.getMessageType() == Message.MessageType.REDIRECT) destinationNode = reply.getNode();
@@ -61,6 +55,13 @@ public class Restore {
                     return;
                 }
                 else Logger.error("Wrong message type when handling reply to GETFILE message!");
+
+                count++;
+                if (count >= 500) {
+                    Logger.error("Timeout in restore searching for the owner");
+                    future.complete(new Result(false, "Timeout in search for the owner"));
+                    return;
+                }
             }
         }
         catch(Exception e)

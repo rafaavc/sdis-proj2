@@ -18,7 +18,9 @@ public class Logger {
         FILETRANSFER,
         RESTORE,
         RECLAIM,
-        FILEPOINTER
+        FILEPOINTER,
+        CHECK,
+        DELETE
     }
 
     private static final List<DebugType> active = new ArrayList<>();
@@ -29,10 +31,12 @@ public class Logger {
 //        setActive(DebugType.QUEUE);
 //        setActive(DebugType.BACKUP);
 //        setActive(DebugType.FILEBUCKET);
-        setActive(DebugType.FILETRANSFER);
-        setActive(DebugType.RESTORE);
+//        setActive(DebugType.FILETRANSFER);
+//        setActive(DebugType.RESTORE);
 //        setActive(DebugType.RECLAIM);
-        setActive(DebugType.FILEPOINTER);
+//        setActive(DebugType.FILEPOINTER);
+//        setActive(DebugType.CHECK);
+        setActive(DebugType.DELETE);
     }
 
     public static void setActive(DebugType type) {

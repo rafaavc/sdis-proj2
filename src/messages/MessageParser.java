@@ -60,12 +60,7 @@ public class MessageParser {
                         .setBody(chunkBodyData);
                     break;
 
-                case STORED: case REMOVED: case DELETE: case LOOKUP: case FILECHECK: case REMOVEPOINTER: case ADDPOINTER:
-                    break;
-
-                case CHUNK:
-                    byte[] chunkBody = Arrays.copyOfRange(data, bodyStart, length);
-                    message.setBody(chunkBody);
+                case DELETE: case LOOKUP: case REMOVEPOINTER: case ADDPOINTER:
                     break;
 
                 case LOOKUPRESPONSE: case GETFILE:
@@ -85,7 +80,7 @@ public class MessageParser {
             switch (type) {
                 case GETPREDECESSOR: case PROCESSEDNO: case PROCESSEDYES: case GETSUCCESSOR: break;
 
-                case NOTIFY: case NODE: case REDIRECT:
+                case NOTIFY: case NODE: case REDIRECT: case CHECK:
                     if (type == MessageType.NODE && headerPieces.length < 5) break;  // is null
                     message.setNode(headerPieces[2], IntParser.parse(headerPieces[3]), IntParser.parse(headerPieces[4]));
                     break;
@@ -100,7 +95,7 @@ public class MessageParser {
     }
 
     public static boolean needsFileKey(MessageType type) {
-        return type == MessageType.CHUNK || type == MessageType.DELETE || type == MessageType.REMOVED || type == MessageType.DATA || type == MessageType.ADDPOINTER || type == MessageType.REMOVEPOINTER
-            || type == MessageType.PUTFILE || type == MessageType.STORED || type == MessageType.LOOKUP || type == MessageType.FILECHECK || type == MessageType.GETFILE || type == MessageType.LOOKUPRESPONSE;
+        return type == MessageType.DELETE || type == MessageType.DATA || type == MessageType.ADDPOINTER || type == MessageType.REMOVEPOINTER
+            || type == MessageType.PUTFILE || type == MessageType.LOOKUP || type == MessageType.GETFILE || type == MessageType.LOOKUPRESPONSE;
     }
 }

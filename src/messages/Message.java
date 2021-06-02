@@ -22,12 +22,9 @@ public class Message {
 
     public enum MessageType {
         PUTFILE,
-        STORED,
         GETFILE,
-        CHUNK,
         DELETE,
-        REMOVED,
-        FILECHECK,
+        CHECK,
         LOOKUP,
         LOOKUPRESPONSE,
         GETPREDECESSOR,

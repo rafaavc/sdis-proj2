@@ -1,10 +1,8 @@
-package server.handlers;
+package server;
 
 import files.FileManager;
 import messages.Message;
 import messages.MessageFactory;
-import server.DataBucket;
-import server.FileBucket;
 import state.OthersFileInfo;
 import utils.Logger;
 
@@ -13,35 +11,14 @@ import java.util.concurrent.CompletableFuture;
 import configuration.PeerConfiguration;
 import utils.Result;
 
-public class BackupHandler extends Handler {
+public class BackupHandler {
     private final DataBucket dataBucket;
+    private final PeerConfiguration configuration;
 
     public BackupHandler(PeerConfiguration configuration, DataBucket dataBucket) {
-        super(configuration);
+        this.configuration = configuration;
         this.dataBucket = dataBucket;
     }
-
-//    public int sendToSuccessor(Message message, byte[] data, boolean stored, int alreadyPerceivedReplicationDegree) throws Exception {
-//        if (message.getReplicationDeg() > alreadyPerceivedReplicationDegree)
-//        {
-//            CompletableFuture<ResultWithData<Integer>> future = new CompletableFuture<>();
-//
-//            Backup backupAction = new Backup(future, configuration,
-//                    new FileRepresentation(message.getFileKey(), data), message.getReplicationDeg(), alreadyPerceivedReplicationDegree);
-//
-//            backupAction.execute();
-//
-//            if (future.get().success()) alreadyPerceivedReplicationDegree += future.get().getData();
-//        }
-//        else Logger.debug(Logger.DebugType.BACKUP, "The file already has the desired replication degree!");
-//
-//        return alreadyPerceivedReplicationDegree;
-//    }
-
-//    public int sendToSuccessor(Message message, boolean stored, int alreadyPerceivedReplicationDegree) throws Exception {
-//        byte[] data = new FileManager(configuration.getRootDir()).readBackedUpFile(message.getFileKey());
-//        return sendToSuccessor(message, data, stored, alreadyPerceivedReplicationDegree);
-//    }
 
     public Message handle(Message message) {
         if (message.getMessageType() == Message.MessageType.PUTFILE) {

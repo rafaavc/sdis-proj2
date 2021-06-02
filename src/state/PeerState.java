@@ -129,12 +129,20 @@ public class PeerState implements Serializable {
         }
     }
 
+    public List<Integer> getFilePointers() {
+        return filePointers;
+    }
+
     public void deleteFile(Integer fileKey) {
         synchronized (myFiles) {
             myFileNameKey.remove(myFiles.get(fileKey).getFileName());
             myFiles.remove(fileKey);
             writeState();
         }
+    }
+
+    public List<Integer> getDeletedFiles() {
+        return deletedFiles;
     }
 
     public void addBackedUpFile(OthersFileInfo file) {
@@ -172,6 +180,7 @@ public class PeerState implements Serializable {
     public List<OthersFileInfo> getOthersFiles() {
         return new ArrayList<>(othersFiles.values());
     }
+
 
     public void deleteOthersFile(Integer fileKey) {
         synchronized (othersFiles) {

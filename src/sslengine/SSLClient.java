@@ -99,37 +99,6 @@ public class SSLClient extends SSLPeer{
         return null;
     }
 
-//    public static Future<Message> send(PeerConfiguration configuration, InetSocketAddress address, Message message, boolean wantReply) throws Exception {
-//        CompletableFuture<Message> future = new CompletableFuture<>();
-//            try {
-//
-////                int total = 0;
-////                while (total < 5 && !future.isDone()) {
-////                    total++;
-//
-//                    SSLClient client = new SSLClient(address.getAddress().getHostAddress(), address.getPort());
-//                    client.connect();
-//
-//                    client.write(message);
-//                configuration.getThreadScheduler().submit(() -> {
-//
-//                    Message reply = null;
-//                    if (wantReply) reply = client.readReply();
-//
-//                    client.shutdown();
-//
-//                    if (reply != null || !wantReply) future.complete(reply);
-//
-//                    if (!future.isDone()) throw new Exception("Couldn't get a reply to message: " + message.toString().trim());
-//                });
-//
-//            } catch(Exception e) {
-//                future.completeExceptionally(e);
-//            }
-//
-//        return future;
-//    }
-
     public static void send(ScheduledThreadPoolExecutor scheduler, SSLClient client, Message message, Consumer<Message> onComplete, boolean wantReply) throws Exception {
         client.write(message);
 

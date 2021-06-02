@@ -9,12 +9,10 @@ import sslengine.SSLClient;
 import utils.Logger;
 import utils.ResultWithData;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class FileSender {
     private static final String successMessage = "File sent successfully! Replication degree = ";

@@ -60,7 +60,7 @@ public class MessageParser {
                         .setBody(chunkBodyData);
                     break;
 
-                case STORED: case REMOVED: case GETFILE: case DELETE: case LOOKUP: case FILECHECK:
+                case STORED: case REMOVED: case DELETE: case LOOKUP: case FILECHECK:
                     break;
 
                 case CHUNK:
@@ -68,7 +68,7 @@ public class MessageParser {
                     message.setBody(chunkBody);
                     break;
 
-                case LOOKUPRESPONSE:
+                case LOOKUPRESPONSE: case GETFILE:
                     message.setNode(headerPieces[3], IntParser.parse(headerPieces[4]), IntParser.parse(headerPieces[5]));
                     break;
 
@@ -85,7 +85,7 @@ public class MessageParser {
             switch (type) {
                 case GETPREDECESSOR: case PROCESSEDNO: case PROCESSEDYES: break;
 
-                case NOTIFY: case PREDECESSOR:
+                case NOTIFY: case PREDECESSOR: case REDIRECT:
                     if (type == MessageType.PREDECESSOR && headerPieces.length < 5) break;  // the successor doesn't have a predecessor
                     message.setNode(headerPieces[2], IntParser.parse(headerPieces[3]), IntParser.parse(headerPieces[4]));
                     break;

@@ -7,6 +7,7 @@ import configuration.PeerConfiguration;
 import files.FileRepresentation;
 import messages.Message;
 import messages.MessageFactory;
+import sslengine.SSLClient;
 import state.MyFileInfo;
 import utils.Logger;
 import utils.ResultWithData;
@@ -64,7 +65,25 @@ public class Backup implements Action {
             Message message = MessageFactory.getPutfileMessage(configuration.getPeerId(), file.getFileKey(), (int) Math.ceil(file.getData().length / 15000.), desiredReplicationDegree, alreadyObtainedReplicationDeg, file.getData().length);
             Logger.debug(Logger.DebugType.BACKUP, "Sending " + message);
 
-            ResultWithData<Integer> result = FileSender.sendFile(configuration, file, destinationNode, message);
+
+            Message reply = SSLClient.sendQueued(configuration, destinationNode.getInetSocketAddress(), message, true).get();
+
+            // TODO if NOSPACE then send to the successor of the node that has no space
+
+            if (reply.getMessageType() != Message.MessageType.PROCESSEDNO && reply.getMessageType() != Message.MessageType.PROCESSEDYES)
+            {
+                future.complete(new ResultWithData<>(false, "Received wrong response to PUTFILE message!", -1));
+                return;
+            }
+
+            if (reply.getMessageType() == Message.MessageType.PROCESSEDNO)
+            {
+                int perceivedReplicationDegree = -1; // TODO ask for the perceived replication degree
+                future.complete(new ResultWithData<>(true, "File sent successfully! Replication degree = " + perceivedReplicationDegree, perceivedReplicationDegree));
+                return;
+            }
+
+            ResultWithData<Integer> result = FileSender.sendFile(configuration, file, destinationNode);
             if (result.success()) {
                 int perceivedReplicationDegree = result.getData();
                 if (backingUp && saveToState) configuration.getPeerState().addFile(new MyFileInfo(filePath, file.getData().length, file.getFileKey(), desiredReplicationDegree, perceivedReplicationDegree));

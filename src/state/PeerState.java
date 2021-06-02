@@ -144,8 +144,8 @@ public class PeerState implements Serializable {
         }
     }
 
-    public boolean ownsFileWithId(String fileId) {
-        return myFiles.containsKey(fileId);
+    public boolean ownsFileWithKey(Integer fileKey) {
+        return myFiles.containsKey(fileKey);
     }
 
     public boolean ownsFileWithName(String fileName) {

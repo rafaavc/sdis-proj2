@@ -35,7 +35,7 @@ public class Restore {
 
             ChordNode destinationNode = configuration.getChord().lookup(fileKey).get();
 
-            Message message = MessageFactory.getGetfileMessage(configuration.getPeerId(), fileKey);
+            Message message = MessageFactory.getGetfileMessage(configuration.getPeerId(), fileKey, configuration.getChord().getSelf());
             Logger.debug(Logger.DebugType.RESTORE, "Sending " + message);
 
 
@@ -44,17 +44,22 @@ public class Restore {
                 try {
                     new FileManager(configuration.getRootDir()).write(file.getFileName(), data);
                     if (data == null) throw new Exception("Couldn't receive file data!");
+                    future.complete(new Result(true, "File '" + file.getFileName() + "' restored successfully!"));
                 } catch (Exception e) {
-                    Logger.error("writing restored file to filesystem");
+                    Logger.error("writing restored file to filesystem", e, true);
                     future.complete(new Result(false, "Couldn't receive file data :("));
                 }
-            }));
+            }, 500));
 
             // TODO timeout
             while (true) {
                 Message reply = SSLClient.sendQueued(configuration, destinationNode.getInetSocketAddress(), message, true).get();
                 if (reply.getMessageType() == Message.MessageType.REDIRECT) destinationNode = reply.getNode();
                 else if (reply.getMessageType() == Message.MessageType.PROCESSEDYES) break;
+                else if (reply.getMessageType() == Message.MessageType.PROCESSEDNO) {
+                    future.complete(new Result(false, "Couldn't find peer who has backed up '" + file.getFileName() + "' :("));
+                    return;
+                }
                 else Logger.error("Wrong message type when handling reply to GETFILE message!");
             }
         }

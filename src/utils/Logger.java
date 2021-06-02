@@ -28,8 +28,9 @@ public class Logger {
 //        setActive(DebugType.QUEUE);
 //        setActive(DebugType.BACKUP);
 //        setActive(DebugType.FILEBUCKET);
-//        setActive(DebugType.FILETRANSFER);
+        setActive(DebugType.FILETRANSFER);
         setActive(DebugType.RESTORE);
+//        setActive(DebugType.RECLAIM);
     }
 
     public static void setActive(DebugType type) {

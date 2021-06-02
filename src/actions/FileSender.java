@@ -19,22 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class FileSender {
     private static final String successMessage = "File sent successfully! Replication degree = ";
 
-    public static ResultWithData<Integer> sendFile(PeerConfiguration configuration, FileRepresentation file, ChordNode destinationNode, Message startMessage) throws Exception {
-
-        Message reply = SSLClient.sendQueued(configuration, destinationNode.getInetSocketAddress(), startMessage, true).get();
-
-        // TODO if NOSPACE then send to the successor of the node that has no space
-
-        if (reply.getMessageType() != Message.MessageType.PROCESSEDNO && reply.getMessageType() != Message.MessageType.PROCESSEDYES)
-            return new ResultWithData<>(false, "Received wrong response to PUTFILE message!", -1);
-
-        if (reply.getMessageType() == Message.MessageType.PROCESSEDNO)
-        {
-            int perceivedReplicationDegree = -1; // TODO ask for the perceived replication degree
-            return new ResultWithData<>(true, successMessage + perceivedReplicationDegree, perceivedReplicationDegree);
-        }
-
-
+    public static ResultWithData<Integer> sendFile(PeerConfiguration configuration, FileRepresentation file, ChordNode destinationNode) throws Exception {
         Logger.log("Sending the file (key=" + file.getFileKey() + ") up to " + destinationNode);
         Logger.debug(Logger.DebugType.FILETRANSFER, "Sending parts...");
 

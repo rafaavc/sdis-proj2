@@ -54,6 +54,10 @@ public class MessageFactory {
         return new Message(MessageType.PROCESSEDYES, senderId);
     }
 
+    public static Message getRedirectMessage(int senderId, ChordNode whereTo) {
+        return new Message(MessageType.REDIRECT, senderId, whereTo);
+    }
+
     public static byte[] getStoredMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
         Message msg = new Message(MessageType.STORED,
                                     senderId,
@@ -69,10 +73,11 @@ public class MessageFactory {
         return msg.getBytes();
     }
 
-    public static Message getGetfileMessage(int senderId, int fileKey) throws ArgsException {
+    public static Message getGetfileMessage(int senderId, int fileKey, ChordNode node) throws ArgsException {
         return new Message(MessageType.GETFILE,
                             senderId,
-                            fileKey);
+                            fileKey,
+                            node);
     }
 
     public static byte[] getChunkMessage(int senderId, int fileKey, int chunkNo, byte[] body) throws ArgsException {

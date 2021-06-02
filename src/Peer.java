@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
 
+import actions.Restore;
 import configuration.ClientInterface;
 import configuration.PeerConfiguration;
 import messages.Message;
@@ -99,7 +100,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
             return new Result(false, "The file '" + fileName + "' doesn't exist in the peer's history.");
         }
         CompletableFuture<Result> f = new CompletableFuture<>();
-//        new Restore(f, configuration, getPeerState().getFileKey(fileName)).execute();
+        new Restore(f, configuration, getPeerState().getFileKey(fileName)).execute();
 
         try
         {

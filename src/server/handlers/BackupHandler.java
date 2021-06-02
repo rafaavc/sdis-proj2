@@ -66,9 +66,13 @@ public class BackupHandler extends Handler {
 
                     return MessageFactory.getProcessedNoMessage(configuration.getPeerId());
                 }
-                if (configuration.getPeerState().getMaximumStorage() != -1 && configuration.getPeerState().getStorageAvailable() < message.getByteAmount() / 1000.)
+                if ((configuration.getPeerState().getMaximumStorage() != -1 && configuration.getPeerState().getStorageAvailable() < message.getByteAmount() / 1000.)  // if no space available
+                        || configuration.getPeerState().ownsFileWithKey(message.getFileKey()))   // or if owns the file
                 {
-                    Logger.log("Not enough space available for backup. Redirecting to successor.");
+                    if (configuration.getPeerState().ownsFileWithKey(message.getFileKey()))
+                        Logger.log("I am the owner of the file. Redirecting to successor.");
+                    else
+                        Logger.log("Not enough space available for backup. Redirecting to successor.");
 
                     configuration.getPeerState().addPointerFile(message.getFileKey()); // Store in state that the file is responsibility of the successor
 

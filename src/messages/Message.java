@@ -59,6 +59,8 @@ public class Message {
         messageTypeStrings.put(MessageType.DATA, "DATA");
         messageTypeStrings.put(MessageType.PROCESSEDNO, "PROCESSEDNO");
         messageTypeStrings.put(MessageType.PROCESSEDYES, "PROCESSEDYES");
+        messageTypeStrings.put(MessageType.REDIRECT, "REDIRECT");
+        messageTypeStrings.put(MessageType.KEEPALIVE, "KEEPALIVE");
     }
 
     public Message(int senderId, Integer fileKey) {

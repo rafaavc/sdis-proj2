@@ -1,14 +1,17 @@
 package server;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLEngine;
 
+import actions.FileSender;
 import chord.ChordNode;
 import configuration.PeerConfiguration;
 import exceptions.ArgsException;
 import files.FileManager;
+import files.FileRepresentation;
 import messages.Message;
 import messages.MessageFactory;
 import messages.MessageParser;
@@ -24,7 +27,7 @@ public class ServerRouter implements Router {
 
     public ServerRouter(PeerConfiguration configuration) {
         this.configuration = configuration;
-        this.dataBucket = new DataBucket();
+        this.dataBucket = configuration.getDataBucket();
         this.backupHandler = new BackupHandler(configuration, dataBucket);
     }
 
@@ -64,6 +67,24 @@ public class ServerRouter implements Router {
 
                 dataBucket.add(message.getFileKey(), message.getOrder(), message.getBody());
                 response = MessageFactory.getProcessedYesMessage(configuration.getPeerId());
+                break;
+
+            case GETFILE:
+                Logger.debug(DebugType.RESTORE, "Received GETFILE: " + message);
+
+                if (!configuration.getPeerState().hasBackedUpFile(message.getFileKey()))
+                {
+                    Logger.debug(DebugType.RESTORE, "I don't have the file!");
+                    if (configuration.getPeerState().isPointerFile(message.getFileKey())) response = MessageFactory.getRedirectMessage(configuration.getPeerId(), configuration.getChord().getSuccessor());
+                    else response = MessageFactory.getProcessedNoMessage(configuration.getPeerId());
+                    Logger.debug(DebugType.RESTORE, "Sending response " + response);
+                }
+                else
+                {
+                    FileManager manager = new FileManager(configuration.getRootDir());
+                    FileSender.sendFile(configuration, new FileRepresentation(message.getFileKey(), manager.readBackedUpFile(message.getFileKey())), message.getNode());
+                    response = MessageFactory.getProcessedYesMessage(configuration.getPeerId());
+                }
                 break;
 
 

@@ -82,25 +82,25 @@ public class PeerState implements Serializable {
         }
     }
 
-    public void addDeletedFile(Integer fileKey) {
-        synchronized (deletedFiles) {
-            if (!deletedFiles.contains(fileKey)) deletedFiles.add(fileKey);
-            writeState();
-        }
-    }
-
-    public void removeDeletedFile(Integer fileKey) {
-        synchronized (deletedFiles) {
-            deletedFiles.remove(fileKey);
-            writeState();
-        }
-    }
-
-    public boolean isDeleted(Integer fileKey) {
-        synchronized (deletedFiles) {
-            return deletedFiles.contains(fileKey);
-        }
-    }
+//    public void addDeletedFile(Integer fileKey) {
+//        synchronized (deletedFiles) {
+//            if (!deletedFiles.contains(fileKey)) deletedFiles.add(fileKey);
+//            writeState();
+//        }
+//    }
+//
+//    public void removeDeletedFile(Integer fileKey) {
+//        synchronized (deletedFiles) {
+//            deletedFiles.remove(fileKey);
+//            writeState();
+//        }
+//    }
+//
+//    public boolean isDeleted(Integer fileKey) {
+//        synchronized (deletedFiles) {
+//            return deletedFiles.contains(fileKey);
+//        }
+//    }
 
     public void addPointerFile(Integer fileKey) {
         synchronized (filePointers) {
@@ -256,13 +256,13 @@ public class PeerState implements Serializable {
             res.append("\n");
         }
 
-        if (!deletedFiles.isEmpty()) {
-            res.append("I've got these deleted files:\n");
-            for (int fileKey : deletedFiles) {
-                res.append("- ").append(fileKey).append("\n");
-            }
-            res.append("\n");
-        }
+//        if (!deletedFiles.isEmpty()) {
+//            res.append("I've got these deleted files:\n");
+//            for (int fileKey : deletedFiles) {
+//                res.append("- ").append(fileKey).append("\n");
+//            }
+//            res.append("\n");
+//        }
 
         res.append("Maximum storage: ").append(getMaximumStorage()).append("\n")
                 .append("Occupied storage: ").append(getOccupiedStorage()).append("\n");

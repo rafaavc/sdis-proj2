@@ -124,18 +124,18 @@ public class ServerRouter implements Router {
                         builder.append("\t").append(file.getFileKey()).append(" (i backed up)\n");
                     }
                 }
-                builder.append("\nFiles to be deleted:\n");
-                for (int fileKey : state.getDeletedFiles()) {
-                    if (Chord.isBetween(sender.getId(), fileKey, selfId, false)) { // if the sender is a successor of the file and is before this node
-                        SSLClient.sendQueued(sender, MessageFactory.getDeleteMessage(selfId, fileKey), false);
-                        builder.append("\t").append(fileKey).append("\n");
-                    }
-                }
+//                builder.append("\nFiles to be deleted:\n");
+//                for (int fileKey : state.getDeletedFiles()) {
+//                    if (Chord.isBetween(sender.getId(), fileKey, selfId, false)) { // if the sender is a successor of the file and is before this node
+//                        SSLClient.sendQueued(sender, MessageFactory.getDeleteMessage(selfId, fileKey), false);
+//                        builder.append("\t").append(fileKey).append("\n");
+//                    }
+//                }
                 Logger.debug(DebugType.CHECK, builder.toString());
                 break;
 
             case DELETE:
-                state.addDeletedFile(message.getFileKey());
+                // state.addDeletedFile(message.getFileKey());
 
                 Logger.debug(DebugType.DELETE, "Received delete for file = " + message.getFileKey());
                 if (state.isPointerFile(message.getFileKey()) || state.hasBackedUpFile(message.getFileKey())) {

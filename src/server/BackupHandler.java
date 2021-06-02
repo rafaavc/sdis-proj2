@@ -21,7 +21,7 @@ public class BackupHandler {
             try {
                 Logger.debug(Logger.DebugType.BACKUP, "Received PUTFILE: " + message);
 
-                configuration.getPeerState().removeDeletedFile(message.getFileKey());   // remove the file from the deleted files list
+                // configuration.getPeerState().removeDeletedFile(message.getFileKey());   // remove the file from the deleted files list
 
                 if (configuration.getPeerState().hasBackedUpFile(message.getFileKey()))
                 {

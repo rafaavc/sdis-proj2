@@ -1,28 +1,26 @@
 package sslengine;
 
-import utils.Logger;
-import utils.Logger.DebugType;
-
-import javax.net.ssl.*;
-
-import messages.Message;
-import messages.MessageParser;
-import server.Router;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.security.SecureRandom;
 import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+
+import messages.Message;
+import messages.MessageParser;
+import server.Router;
+import utils.Logger;
+import utils.Logger.DebugType;
 
 public class SSLServer extends SSLPeer {
 

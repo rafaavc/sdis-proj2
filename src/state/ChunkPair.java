@@ -2,7 +2,6 @@ package state;
 
 import java.io.Serializable;
 
-// TODO delete
 public class ChunkPair implements Serializable {
     private static final long serialVersionUID = 4176934406107100902L;
 

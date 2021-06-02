@@ -1,15 +1,11 @@
 package server;
 
+import configuration.PeerConfiguration;
 import files.FileManager;
 import messages.Message;
 import messages.MessageFactory;
 import state.OthersFileInfo;
 import utils.Logger;
-
-import java.util.concurrent.CompletableFuture;
-
-import configuration.PeerConfiguration;
-import utils.Result;
 
 public class BackupHandler {
     private final DataBucket dataBucket;
@@ -49,7 +45,6 @@ public class BackupHandler {
 
 
                 Logger.log("Going to backup file " + message.getFileKey());
-                CompletableFuture<Result> f = new CompletableFuture<>();
                 dataBucket.add(message.getFileKey(), new FileBucket(message.getOrder(), (byte[] data) -> {
                     try {
                         if (data == null) {

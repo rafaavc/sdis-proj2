@@ -1,20 +1,16 @@
 package actions;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import configuration.PeerConfiguration;
 import files.FileManager;
 import files.FileRepresentation;
-import sslengine.SSLClient;
 import state.OthersFileInfo;
 import state.PeerState;
 import utils.Logger;
 import utils.Result;
-import utils.ResultWithData;
 
 public class Reclaim {
    private final PeerConfiguration configuration;

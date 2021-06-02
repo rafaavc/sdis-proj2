@@ -1,8 +1,6 @@
 package chord;
 
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -22,9 +20,6 @@ import messages.Message;
 import messages.MessageFactory;
 import sslengine.SSLClient;
 import sslengine.SSLPeer;
-
-import java.lang.Math;
-
 import utils.Logger;
 
 public class Chord {

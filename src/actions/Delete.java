@@ -1,19 +1,15 @@
 package actions;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
+import chord.ChordNode;
 import configuration.PeerConfiguration;
 import messages.Message;
-import messages.MessageFactory;
 import messages.Message.MessageType;
+import messages.MessageFactory;
 import sslengine.SSLClient;
-import state.PeerState;
 import utils.Logger;
 import utils.Result;
-import chord.ChordNode;
 
 public class Delete {
     private final PeerConfiguration configuration;
@@ -27,8 +23,6 @@ public class Delete {
     }
 
     public void execute() {
-        this.configuration.getPeerState().addDeletedFile(fileKey);
-        this.configuration.getPeerState().deleteFile(fileKey);
         
         try 
         {
@@ -56,6 +50,7 @@ public class Delete {
                     destinationNode = successor.getNode();
 
                 } else if (reply.getMessageType() == MessageType.PROCESSEDNO) {
+                    this.configuration.getPeerState().deleteFile(fileKey);
                     future.complete(new Result(true, "File " + fileKey + " successfully deleted!"));
                     return;
                 } else {

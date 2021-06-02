@@ -13,7 +13,6 @@ import files.FileRepresentation;
 import messages.Message;
 import messages.MessageFactory;
 import sslengine.SSLClient;
-import state.MyFileInfo;
 import state.OthersFileInfo;
 import state.PeerState;
 import utils.Logger;

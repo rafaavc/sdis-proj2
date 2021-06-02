@@ -3,8 +3,6 @@ package state;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MyFileInfo implements Serializable {
     private static final long serialVersionUID = 8712295865807115205L;

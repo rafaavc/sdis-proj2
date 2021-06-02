@@ -37,30 +37,13 @@ public class FileManager {
         if (!dir.exists()) dir.mkdirs();
     }
 
-    public void writeFile(String fileName, List<byte[]> chunks) throws IOException {
-        
-        AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(this.rootDir + "/" + fileName), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-
-        long offset = 0;
-        for (byte[] chunk : chunks) {
-            ByteBuffer buffer = ByteBuffer.wrap(chunk);
-            channel.write(buffer, offset);
-            offset += chunk.length;
-        }
-
-        channel.force(true);
-
-    }
-
     public void write(String file, byte[] data) throws IOException {
-        
         ByteBuffer buffer = ByteBuffer.wrap(data);
         AsynchronousFileChannel channel = AsynchronousFileChannel.open(Paths.get(this.rootDir + "/" + file), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
         
         channel.write(buffer, 0);
 
         channel.force(true);
-
     }
 
     public static void write(AsynchronousFileChannel channel, byte[] data) throws IOException {

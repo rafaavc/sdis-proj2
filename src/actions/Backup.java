@@ -53,7 +53,7 @@ public class Backup implements Action {
             ResultWithData<Integer> result = FileSender.sendFile(configuration, file, destinationNode, message);
             if (result.success()) {
                 int perceivedReplicationDegree = result.getData();
-                if (backingUp) configuration.getPeerState().addFile(new MyFileInfo(filePath, file.getFileKey(), desiredReplicationDegree, perceivedReplicationDegree));
+                if (backingUp) configuration.getPeerState().addFile(new MyFileInfo(filePath, file.getData().length, file.getFileKey(), desiredReplicationDegree, perceivedReplicationDegree));
             }
             future.complete(result);
         }

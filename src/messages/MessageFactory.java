@@ -68,11 +68,10 @@ public class MessageFactory {
         return msg.getBytes();
     }
 
-    public static Message getGetfileMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
+    public static Message getGetfileMessage(int senderId, int fileKey) throws ArgsException {
         return new Message(MessageType.GETFILE,
                             senderId,
-                            fileKey,
-                            chunkNo);
+                            fileKey);
     }
 
     public static byte[] getChunkMessage(int senderId, int fileKey, int chunkNo, byte[] body) throws ArgsException {

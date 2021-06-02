@@ -9,6 +9,7 @@ import chord.Chord;
 import exceptions.ArgsException;
 import files.FileManager;
 import messages.trackers.ChunkTracker;
+import server.DataBucket;
 import server.Router;
 import server.ServerRouter;
 import server.handlers.strategies.BackupStrategy;
@@ -30,6 +31,7 @@ public class PeerConfiguration {
     private final ScheduledThreadPoolExecutor threadScheduler;
     private final SSLServer server;
     private final Chord chord;
+    private final DataBucket dataBucket;
 
     public PeerConfiguration(String serviceAccessPoint, int serverPort) throws Exception {
         this(serviceAccessPoint, serverPort, null);
@@ -37,7 +39,8 @@ public class PeerConfiguration {
 
     public PeerConfiguration(String serviceAccessPoint, int serverPort, InetSocketAddress preexistingNode) throws Exception {
         this.serviceAccessPoint = serviceAccessPoint;
-
+        
+        this.dataBucket = new DataBucket();
         this.chunkTracker = new ChunkTracker();
         this.threadScheduler = new ScheduledThreadPoolExecutor(30);
 
@@ -54,6 +57,10 @@ public class PeerConfiguration {
         FileManager.createPeerStateAsynchronousChannel(getRootDir());
 
         Logger.log("My IP is " + ip + "\nMy Chord ring id is " + this.chord.getId());
+    }
+
+    public DataBucket getDataBucket() {
+        return dataBucket;
     }
 
     public Chord getChord() {

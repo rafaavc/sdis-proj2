@@ -35,6 +35,7 @@ public class Message {
         DATA,
         PROCESSEDNO,   // processed ok, doesn't need to receive data
         PROCESSEDYES,   // processed ok, needs to receive data
+        REDIRECT,
         KEEPALIVE // keep waiting for a better reply
     }
 

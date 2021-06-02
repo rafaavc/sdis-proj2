@@ -30,7 +30,27 @@ public class PeerState implements Serializable {
 
     private final ConcurrentMap<Integer, OthersFileInfo> othersFiles = new ConcurrentHashMap<>();
 
+
+    /**
+     *  List with the deleted files correspondent to this node
+     *  If a delete request reaches this node, and it does not have the file not a pointer to its location,
+     *  when the node that has the file, which is before this one in the ring, rejoins,
+     *  he can ask this one whether a file that could be his was deleted
+     */
     private final List<Integer> deletedFiles = new ArrayList<>();
+
+    /**
+     *  List with all the files that should be here but are in the successor
+     *  (and the successor either really has them or also has a pointer to his successor)
+     *
+     *  This happens when the file is backed up but then a peer that is a closer successor of the key of the file
+     *  joins the ring. If this pointer list didn't exist, a future lookup of the file's key would give this node
+     *  and he wouldn't know what to do.
+     *
+     *  Eventually, each of these points could be transferred from the successor to this node
+     *  (for example, with a delay of 10 seconds poll this list and recover one of the files, until it is empty)
+     */
+    private final List<Integer> filePointers = new ArrayList<>();
 
     private int maximumSpaceAvailable = -1;
 
@@ -86,6 +106,26 @@ public class PeerState implements Serializable {
     public boolean isDeleted(Integer fileKey) {
         synchronized (deletedFiles) {
             return deletedFiles.contains(fileKey);
+        }
+    }
+
+    public void addPointerFile(Integer fileKey) {
+        synchronized (filePointers) {
+            if (!filePointers.contains(fileKey)) filePointers.add(fileKey);
+            writeState();
+        }
+    }
+
+    public void removePointerFile(Integer fileKey) {
+        synchronized (filePointers) {
+            filePointers.remove(fileKey);
+            writeState();
+        }
+    }
+
+    public boolean isPointerFile(Integer fileKey) {
+        synchronized (filePointers) {
+            return filePointers.contains(fileKey);
         }
     }
 

@@ -56,14 +56,13 @@ public class BackupHandler extends Handler {
             try {
                 Logger.debug(Logger.DebugType.BACKUP, "Received PUTFILE: " + message);
 
-                // peerState.removeDeletedFile(msg.getFileKey());
-
+                configuration.getPeerState().removeDeletedFile(message.getFileKey());   // remove the file from the deleted files list
 
                 if (configuration.getPeerState().hasBackedUpFile(message.getFileKey()))
                 {
 
                     int perceivedReplicationDegree = sendToSuccessor(message, true, message.getAlreadyPerceivedDegree() + 1);
-                    // send to the peer who sent the message
+                    // TODO send to the peer who sent the message
 
                     return MessageFactory.getProcessedNoMessage(configuration.getPeerId());
                 }
@@ -71,7 +70,8 @@ public class BackupHandler extends Handler {
                 {
                     Logger.log("Not enough space available for backup. Redirecting to successor.");
 
-                    // Store in state that the file is responsibility of the successor
+                    configuration.getPeerState().addPointerFile(message.getFileKey()); // Store in state that the file is responsibility of the successor
+
                     dataBucket.add(message.getFileKey(), new FileBucket(message.getOrder(), (byte[] data) -> {
                         try {
                             if (data == null) {
@@ -81,7 +81,7 @@ public class BackupHandler extends Handler {
                             Logger.log("Sending the file " + message.getFileKey() + " to my successor!");
 
                             int perceivedReplicationDegree = sendToSuccessor(message, data, false, message.getAlreadyPerceivedDegree());
-                            // send to the peer who sent the message
+                            // TODO send to the peer who sent the message
 
                         } catch (Exception e) {
                             Logger.error("sending file to my successor after not being able to back it up", e, true);
@@ -111,7 +111,7 @@ public class BackupHandler extends Handler {
                         Logger.log("Backed up file " + message.getFileKey() + "!");
 
                         int perceivedReplicationDegree = sendToSuccessor(message, data, true, message.getAlreadyPerceivedDegree() + 1);
-                        // send to the peer who sent the message
+                        // TODO send to the peer who sent the message
 
                     } catch (Exception e) {
                         Logger.error("sending file to my successor after being able to back it up", e, true);

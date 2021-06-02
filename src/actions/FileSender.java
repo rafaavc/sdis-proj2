@@ -23,6 +23,8 @@ public class FileSender {
 
         Message reply = SSLClient.sendQueued(configuration, destinationNode.getInetSocketAddress(), startMessage, true).get();
 
+        // TODO if NOSPACE then send to the successor of the node that has no space
+
         if (reply.getMessageType() != Message.MessageType.PROCESSEDNO && reply.getMessageType() != Message.MessageType.PROCESSEDYES)
             return new ResultWithData<>(false, "Received wrong response to PUTFILE message!", -1);
 

@@ -11,13 +11,23 @@ public class MyFileInfo implements Serializable {
     
     private final String fileName;
     private final int fileKey, desiredReplicationDegree, perceivedReplicationDegree;
+    private final long byteAmount;
 
-    public MyFileInfo(String pathName, int fileKey, int desiredReplicationDegree, int perceivedReplicationDegree) {
+    public MyFileInfo(String pathName, long fileSize, int fileKey, int desiredReplicationDegree, int perceivedReplicationDegree) {
         Path path = Paths.get(pathName);
         this.fileName = path.getFileName().toString();
         this.fileKey = fileKey;
         this.desiredReplicationDegree = desiredReplicationDegree;
         this.perceivedReplicationDegree = perceivedReplicationDegree;
+        this.byteAmount = fileSize;
+    }
+
+    public long getByteAmount() {
+        return byteAmount;
+    }
+
+    public int getPerceivedReplicationDegree() {
+        return perceivedReplicationDegree;
     }
 
     public int getDesiredReplicationDegree() {

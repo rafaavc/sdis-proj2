@@ -237,7 +237,7 @@ public class PeerState implements Serializable {
 
         StringBuilder res = new StringBuilder();
 
-        if (othersFiles.isEmpty() && myFiles.isEmpty()) res.append("I haven't sent any files nor backed up any chunks.\n");
+        if (othersFiles.isEmpty() && myFiles.isEmpty()) res.append("I haven't sent nor backed up any files.\n");
 
         if (!othersFiles.isEmpty()) {
             res.append("I've stored these files:\n");
@@ -254,6 +254,23 @@ public class PeerState implements Serializable {
             }
             res.append("\n");
         }
+
+        if (!filePointers.isEmpty()) {
+            res.append("I've got these file pointers:\n");
+            for (int fileKey : filePointers) {
+                res.append("- ").append(fileKey).append("\n");
+            }
+            res.append("\n");
+        }
+
+        if (!deletedFiles.isEmpty()) {
+            res.append("I've got these deleted files:\n");
+            for (int fileKey : deletedFiles) {
+                res.append("- ").append(fileKey).append("\n");
+            }
+            res.append("\n");
+        }
+
         res.append("Maximum storage: ").append(getMaximumStorage()).append("\n")
                 .append("Occupied storage: ").append(getOccupiedStorage()).append("\n");
 

@@ -36,7 +36,7 @@ public class Logger {
 //        setActive(DebugType.RECLAIM);
 //        setActive(DebugType.FILEPOINTER);
 //        setActive(DebugType.CHECK);
-        setActive(DebugType.DELETE);
+//        setActive(DebugType.DELETE);
     }
 
     public static void setActive(DebugType type) {

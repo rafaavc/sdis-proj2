@@ -85,7 +85,7 @@ public class ServerRouter implements Router {
 
                 if (!state.hasBackedUpFile(message.getFileKey()))
                 {
-                    Logger.debug(DebugType.RESTORE, "I don't have the file!");
+                    Logger.debug(DebugType.RESTORE, "I don't have the file. " + (state.isPointerFile(message.getFileKey()) ? "Redirecting!" : "Sending PROCESSEDNO!"));
                     if (state.isPointerFile(message.getFileKey())) response = MessageFactory.getRedirectMessage(configuration.getPeerId(), configuration.getChord().getSuccessor());
                     else response = MessageFactory.getProcessedNoMessage(configuration.getPeerId());
                     Logger.debug(DebugType.RESTORE, "Sending response " + response);
@@ -138,19 +138,29 @@ public class ServerRouter implements Router {
                 break;
 
             case DELETE:
+                state.addDeletedFile(message.getFileKey());
+
                 Logger.debug(DebugType.DELETE, "Received delete for file = " + message.getFileKey());
-                if (state.hasBackedUpFile(message.getFileKey()))
-                {
-                    Logger.debug(DebugType.DELETE, "Had bucked up file " + message.getFileKey() + ". Deleting!");
+                if (state.isPointerFile(message.getFileKey()) || state.hasBackedUpFile(message.getFileKey())) {
+                    if (state.isPointerFile(message.getFileKey())) {
+                        Logger.debug(DebugType.DELETE, "Had file pointer to file " + message.getFileKey() + ". Deleting!");
 
-                    state.deleteOthersFile(message.getFileKey());
-                    state.addDeletedFile(message.getFileKey());
-                    FileManager manager = new FileManager(configuration.getRootDir());
-                    manager.deleteBackedUpFile(message.getFileKey());
+                        state.removePointerFile(message.getFileKey());
+                    }
+                    if (state.hasBackedUpFile(message.getFileKey())) {
+                        Logger.debug(DebugType.DELETE, "Had backed up file " + message.getFileKey() + ". Deleting!");
 
+                        state.deleteOthersFile(message.getFileKey());
+                        FileManager manager = new FileManager(configuration.getRootDir());
+                        manager.deleteBackedUpFile(message.getFileKey());
+                    }
                     response = MessageFactory.getProcessedYesMessage(configuration.getPeerId());
                 }
-                else response = MessageFactory.getProcessedNoMessage(configuration.getPeerId());
+                else
+                {
+                    Logger.debug(DebugType.DELETE, "Didn't backup file " + message.getFileKey() + ". Not deleting!");
+                    response = MessageFactory.getProcessedNoMessage(configuration.getPeerId());
+                }
                 break;
 
             default:

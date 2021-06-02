@@ -46,11 +46,10 @@ public class Reclaim {
 
             List<OthersFileInfo> peerFiles = state.getOthersFiles();
 
-            // remover e mandar msg para cada file que seja necessário remover (os que tiverem perceived degree maior que o desired primeiro)
             peerFiles.sort((OthersFileInfo fileInfo1, OthersFileInfo fileInfo2) -> {
                 float file1 = fileInfo1.getSize();
                 float file2 = fileInfo2.getSize();
-                return (int) ((file1 - file2) * 1000); // order in ascending
+                return (int) ((file2 - file1) * 1000);
             });
 
             Logger.debug(Logger.DebugType.RECLAIM, "Files ordered: " + peerFiles);
@@ -75,7 +74,7 @@ public class Reclaim {
 
                 fileManager.deleteBackedUpFile(file.getFileKey());
 
-                CompletableFuture<ResultWithData<Integer>> auxFuture = new CompletableFuture<>();
+                CompletableFuture<Result> auxFuture = new CompletableFuture<>();
 
                 Backup backupAction = new Backup(auxFuture, configuration,
                         new FileRepresentation(file.getFileKey(), data), file.getDesiredReplicationDegree());

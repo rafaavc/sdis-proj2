@@ -32,7 +32,7 @@ public class MessageParser {
 
         String messageType = headerPieces[0];
 
-        MessageType type = getMessageType(messageType);
+        MessageType type = MessageType.valueOf(messageType);
 
         int senderId = IntParser.parse(headerPieces[1]);
         Message message;
@@ -83,10 +83,10 @@ public class MessageParser {
             message.setMessageType(type);
             
             switch (type) {
-                case GETPREDECESSOR: case PROCESSEDNO: case PROCESSEDYES: break;
+                case GETPREDECESSOR: case PROCESSEDNO: case PROCESSEDYES: case GETSUCCESSOR: break;
 
-                case NOTIFY: case PREDECESSOR: case REDIRECT:
-                    if (type == MessageType.PREDECESSOR && headerPieces.length < 5) break;  // the successor doesn't have a predecessor
+                case NOTIFY: case NODE: case REDIRECT:
+                    if (type == MessageType.NODE && headerPieces.length < 5) break;  // is null
                     message.setNode(headerPieces[2], IntParser.parse(headerPieces[3]), IntParser.parse(headerPieces[4]));
                     break;
                 
@@ -102,13 +102,5 @@ public class MessageParser {
     public static boolean needsFileKey(MessageType type) {
         return type == MessageType.CHUNK || type == MessageType.DELETE || type == MessageType.REMOVED || type == MessageType.DATA
             || type == MessageType.PUTFILE || type == MessageType.STORED || type == MessageType.LOOKUP || type == MessageType.FILECHECK || type == MessageType.GETFILE || type == MessageType.LOOKUPRESPONSE;
-    }
-
-    public static MessageType getMessageType(String type) throws ArgsException {
-        for (MessageType value : Message.messageTypeStrings.keySet())
-        {
-            if (type.equals(Message.messageTypeStrings.get(value))) return value; 
-        }
-        throw new ArgsException(Type.MESSAGE_TYPE, type);
     }
 }

@@ -50,7 +50,15 @@ public class ServerRouter implements Router {
                 ChordNode predecessorNode = configuration.getChord().getPredecessor();
                 Logger.debug(configuration.getChord().getSelf(), "Replying with " + predecessorNode);
 
-                response = MessageFactory.getPredecessorMessage(configuration.getPeerId(), predecessorNode);
+                response = MessageFactory.getNodeMessage(configuration.getPeerId(), predecessorNode);
+                break;
+
+            case GETSUCCESSOR:
+                Logger.debug(configuration.getChord().getSelf(), "Received GETSUCCESSOR");
+                ChordNode successorNode = configuration.getChord().getSuccessor();
+                Logger.debug(configuration.getChord().getSelf(), "Replying with " + successorNode);
+
+                response = MessageFactory.getNodeMessage(configuration.getPeerId(), successorNode);
                 break;
 
             case NOTIFY:

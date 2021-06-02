@@ -20,7 +20,7 @@ public class Message {
 
     private byte[] body = null;
 
-    public static enum MessageType {
+    public enum MessageType {
         PUTFILE,
         STORED,
         GETFILE,
@@ -31,37 +31,17 @@ public class Message {
         LOOKUP,
         LOOKUPRESPONSE,
         GETPREDECESSOR,
-        PREDECESSOR,
+        NODE,
         NOTIFY,
         DATA,
         PROCESSEDNO,   // processed ok, doesn't need to receive data
         PROCESSEDYES,   // processed ok, needs to receive data
         REDIRECT,
-        KEEPALIVE // keep waiting for a better reply
+        KEEPALIVE, // keep waiting for a better reply
+        GETSUCCESSOR
     }
 
     private static final String CRLF = new String(new byte[] { 0xD, 0xA });
-    public static final HashMap<MessageType, String> messageTypeStrings = new HashMap<>();
-
-    static {
-        messageTypeStrings.put(MessageType.PUTFILE, "PUTFILE");
-        messageTypeStrings.put(MessageType.STORED, "STORED");
-        messageTypeStrings.put(MessageType.GETFILE, "GETFILE");
-        messageTypeStrings.put(MessageType.CHUNK, "CHUNK");
-        messageTypeStrings.put(MessageType.DELETE, "DELETE");
-        messageTypeStrings.put(MessageType.REMOVED, "REMOVED");
-        messageTypeStrings.put(MessageType.FILECHECK, "FILECHECK");
-        messageTypeStrings.put(MessageType.LOOKUP, "LOOKUP");
-        messageTypeStrings.put(MessageType.LOOKUPRESPONSE, "LOOKUPRESPONSE");
-        messageTypeStrings.put(MessageType.GETPREDECESSOR, "GETPREDECESSOR");
-        messageTypeStrings.put(MessageType.PREDECESSOR, "PREDECESSOR");
-        messageTypeStrings.put(MessageType.NOTIFY, "NOTIFY");
-        messageTypeStrings.put(MessageType.DATA, "DATA");
-        messageTypeStrings.put(MessageType.PROCESSEDNO, "PROCESSEDNO");
-        messageTypeStrings.put(MessageType.PROCESSEDYES, "PROCESSEDYES");
-        messageTypeStrings.put(MessageType.REDIRECT, "REDIRECT");
-        messageTypeStrings.put(MessageType.KEEPALIVE, "KEEPALIVE");
-    }
 
     public Message(int senderId, Integer fileKey) {
         this.senderId = senderId;
@@ -216,7 +196,7 @@ public class Message {
 
     private List<String> getComponents() {
         List<String> components = new ArrayList<>();
-        components.add(messageTypeStrings.get(messageType));
+        components.add(messageType.toString());
         components.add(String.valueOf(senderId));
         if (fileKey != null) components.add(String.valueOf(fileKey));
         if (order != -1) components.add(String.valueOf(order));
@@ -227,7 +207,7 @@ public class Message {
             components.add(node.getInetAddress().getHostAddress());
             components.add(String.valueOf(node.getPort()));
             components.add(String.valueOf(node.getId()));
-        } else if (messageType == MessageType.PREDECESSOR) {
+        } else if (messageType == MessageType.NODE) {
             components.add("NULL");
         }
         return components;

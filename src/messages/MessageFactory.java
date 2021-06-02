@@ -20,8 +20,12 @@ public class MessageFactory {
         return new Message(MessageType.GETPREDECESSOR, senderId);
     }
 
-    public static Message getPredecessorMessage(int senderId, ChordNode node) {
-        return new Message(MessageType.PREDECESSOR, senderId, node);
+    public static Message getGetSuccessorMessage(int senderId) {
+        return new Message(MessageType.GETSUCCESSOR, senderId);
+    }
+
+    public static Message getNodeMessage(int senderId, ChordNode node) {
+        return new Message(MessageType.NODE, senderId, node);
     }
 
     public static Message getNotifyMessage(int senderId, ChordNode node) {

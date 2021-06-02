@@ -34,7 +34,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
 
         Logger.log("Ready!");
 
-//        new CheckDeleted(configuration).execute();
+
     }
 
     public void writeState() throws IOException {
@@ -79,7 +79,7 @@ public class Peer extends UnicastRemoteObject implements ClientInterface {
             new Delete(new CompletableFuture<>(), configuration, fileKey).execute();
         }
 
-        CompletableFuture<ResultWithData<Integer>> f = new CompletableFuture<>();
+        CompletableFuture<Result> f = new CompletableFuture<>();
         
         try
         {

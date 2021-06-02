@@ -37,7 +37,6 @@ public class FileSender {
         Logger.debug(Logger.DebugType.FILETRANSFER, "Sending parts...");
 
         int totalAmount = 0, order = 0;
-        AtomicReference<Integer> repliesGotten = new AtomicReference<>(0);
         List<Future<Boolean>> futures = new ArrayList<>();
         while (totalAmount != file.getData().length)
         {

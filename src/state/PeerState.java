@@ -133,6 +133,13 @@ public class PeerState implements Serializable {
         return new ArrayList<>(othersFiles.values());
     }
 
+    public void deleteOthersFile(Integer fileKey) {
+        synchronized (othersFiles) {
+            othersFiles.remove(fileKey);
+            writeState();
+        }
+    }
+
     public static PeerState read(String dir) throws IOException, ClassNotFoundException {
         File f = new File(dir + "/" + stateFileName);
         if (!f.exists()) {

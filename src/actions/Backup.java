@@ -17,6 +17,7 @@ public class Backup implements Action {
     private final int desiredReplicationDegree, alreadyObtainedReplicationDeg;
     private final CompletableFuture<ResultWithData<Integer>> future;
     private final boolean backingUp;
+    private final boolean saveToState;
     private final FileRepresentation file;
 
     public Backup(CompletableFuture<ResultWithData<Integer>> future, PeerConfiguration configuration, String filePath, int desiredReplicationDegree) throws Exception {
@@ -27,6 +28,7 @@ public class Backup implements Action {
         backingUp = true;
         file = new FileRepresentation(filePath);
         alreadyObtainedReplicationDeg = 0;
+        saveToState = true;
     }
 
     public Backup(CompletableFuture<ResultWithData<Integer>> future, PeerConfiguration configuration, FileRepresentation file, int desiredReplicationDegree, int alreadyObtainedReplicationDeg) {
@@ -37,6 +39,18 @@ public class Backup implements Action {
         this.file = file;
         this.alreadyObtainedReplicationDeg = alreadyObtainedReplicationDeg;
         backingUp = false;
+        saveToState = false;
+    }
+
+    public Backup(CompletableFuture<ResultWithData<Integer>> future, PeerConfiguration configuration, FileRepresentation file, int desiredReplicationDegree) {
+        this.configuration = configuration;
+        this.filePath = null;
+        this.desiredReplicationDegree = desiredReplicationDegree;
+        this.future = future;
+        this.file = file;
+        backingUp = true;
+        saveToState = false;
+        alreadyObtainedReplicationDeg = 0;
     }
 
     public void execute() {
@@ -53,7 +67,7 @@ public class Backup implements Action {
             ResultWithData<Integer> result = FileSender.sendFile(configuration, file, destinationNode, message);
             if (result.success()) {
                 int perceivedReplicationDegree = result.getData();
-                if (backingUp) configuration.getPeerState().addFile(new MyFileInfo(filePath, file.getFileKey(), desiredReplicationDegree, perceivedReplicationDegree));
+                if (backingUp && saveToState) configuration.getPeerState().addFile(new MyFileInfo(filePath, file.getFileKey(), desiredReplicationDegree, perceivedReplicationDegree));
             }
             future.complete(result);
         }

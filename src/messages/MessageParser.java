@@ -46,8 +46,7 @@ public class MessageParser {
             {
                 case PUTFILE:
                     message.setOrder(Integer.parseInt(headerPieces[3]))
-                        .setReplicationDeg((short) Integer.parseInt(headerPieces[4]))
-                        .setByteAmount(Integer.parseInt(headerPieces[5]));
+                        .setByteAmount(Integer.parseInt(headerPieces[4]));
 
                     byte[] body = Arrays.copyOfRange(data, bodyStart, length);
                     message.setBody(body);

@@ -32,12 +32,11 @@ public class MessageFactory {
         return new Message(MessageType.NOTIFY, senderId, node);
     }
 
-    public static Message getPutfileMessage(int senderId, int fileKey, int nParts, int replicationDeg, int byteAmount) {
+    public static Message getPutfileMessage(int senderId, int fileKey, int nParts, int byteAmount) {
         return new Message(MessageType.PUTFILE,
                             senderId,
                             fileKey,
                             nParts,
-                            replicationDeg,
                             byteAmount);
     }
 

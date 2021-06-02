@@ -64,6 +64,7 @@ public class BackupHandler extends Handler {
                     else
                         Logger.log("Not enough space available for backup.");
 
+                    Logger.debug(Logger.DebugType.FILEPOINTER, "Added pointer (waspointer=" + configuration.getPeerState().isPointerFile(message.getFileKey()) + ") for file " + message.getFileKey());
                     configuration.getPeerState().addPointerFile(message.getFileKey()); // Store in state that the file is responsibility of the successor
 
                     return MessageFactory.getRedirectMessage(configuration.getPeerId(), configuration.getChord().getSuccessor());

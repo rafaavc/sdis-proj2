@@ -62,6 +62,10 @@ public class MessageFactory {
         return new Message(MessageType.REDIRECT, senderId, whereTo);
     }
 
+    public static Message getRemovePointerMessage(int senderId, int fileKey) {
+        return new Message(MessageType.REMOVEPOINTER, senderId, fileKey);
+    }
+
     public static byte[] getStoredMessage(int senderId, int fileKey, int chunkNo) throws ArgsException {
         Message msg = new Message(MessageType.STORED,
                                     senderId,

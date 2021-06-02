@@ -37,8 +37,9 @@ public class Message {
         PROCESSEDNO,   // processed ok, doesn't need to receive data
         PROCESSEDYES,   // processed ok, needs to receive data
         REDIRECT,
-        KEEPALIVE, // keep waiting for a better reply
-        GETSUCCESSOR
+        GETSUCCESSOR,
+        REMOVEPOINTER,
+        ADDPOINTER
     }
 
     private static final String CRLF = new String(new byte[] { 0xD, 0xA });

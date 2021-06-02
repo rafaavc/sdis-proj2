@@ -60,7 +60,7 @@ public class MessageParser {
                         .setBody(chunkBodyData);
                     break;
 
-                case STORED: case REMOVED: case DELETE: case LOOKUP: case FILECHECK:
+                case STORED: case REMOVED: case DELETE: case LOOKUP: case FILECHECK: case REMOVEPOINTER: case ADDPOINTER:
                     break;
 
                 case CHUNK:
@@ -100,7 +100,7 @@ public class MessageParser {
     }
 
     public static boolean needsFileKey(MessageType type) {
-        return type == MessageType.CHUNK || type == MessageType.DELETE || type == MessageType.REMOVED || type == MessageType.DATA
+        return type == MessageType.CHUNK || type == MessageType.DELETE || type == MessageType.REMOVED || type == MessageType.DATA || type == MessageType.ADDPOINTER || type == MessageType.REMOVEPOINTER
             || type == MessageType.PUTFILE || type == MessageType.STORED || type == MessageType.LOOKUP || type == MessageType.FILECHECK || type == MessageType.GETFILE || type == MessageType.LOOKUPRESPONSE;
     }
 }

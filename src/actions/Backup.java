@@ -1,5 +1,7 @@
 package actions;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -51,7 +53,14 @@ public class Backup implements Action {
                     (int) Math.ceil(file.getData().length / 15000.), desiredReplicationDegree, alreadyObtainedReplicationDeg, file.getData().length);
             Logger.debug(Logger.DebugType.BACKUP, "Sending " + message);
 
-            
+
+
+            // will hold all the nodes that redirected since the last node that saved
+            // these nodes remove their (dangling!) pointers because there was no
+            // other node in front of them that stored the file
+            List<ChordNode> nodesThatRedirected = new ArrayList<>();
+
+
             int perceivedReplicationDegree = 0;
             int firstNodeId = destinationNode.getId();
             boolean first = true;
@@ -63,20 +72,19 @@ public class Backup implements Action {
                 if (destinationNode.getId() == configuration.getChord().getId())
                 {
                     destinationNode = configuration.getChord().getSuccessor();
+                    configuration.getPeerState().addPointerFile(message.getFileKey());
+                    nodesThatRedirected.add(configuration.getChord().getSelf());
                     continue;
                 }
 
                 Message reply = SSLClient.sendQueued(configuration, destinationNode.getInetSocketAddress(), message, true).get();
                 switch (reply.getMessageType()) {
-                    case PROCESSEDNO:
-                        perceivedReplicationDegree++;
-                        break;
                     case REDIRECT:
+                        nodesThatRedirected.add(destinationNode);
                         destinationNode = reply.getNode();
                         continue;
                     case PROCESSEDYES:
                         ChordNode node = destinationNode;
-                        perceivedReplicationDegree++;
                         configuration.getThreadScheduler().execute(() -> {
                             try {
                                 FileSender.sendFile(configuration, file, node);
@@ -84,6 +92,9 @@ public class Backup implements Action {
                                 Logger.error("sending file to " + node, e, true);
                             }
                         });
+                    case PROCESSEDNO:
+                        perceivedReplicationDegree++;
+                        nodesThatRedirected = new ArrayList<>();
                         break;
                     default:
                         Logger.error("Invalid reply during backing up...");
@@ -93,6 +104,11 @@ public class Backup implements Action {
                         MessageFactory.getGetSuccessorMessage(configuration.getPeerId()), true).get();
                 destinationNode = successor.getNode();
             }
+
+            // tell the nodes that redirected after the last one who saved to remove their dangling pointers
+            for (ChordNode node : nodesThatRedirected)
+                SSLClient.sendQueued(configuration, node.getInetSocketAddress(),
+                        MessageFactory.getRemovePointerMessage(configuration.getPeerId(), message.getFileKey()), false);
 
             if (perceivedReplicationDegree > 0)
             {

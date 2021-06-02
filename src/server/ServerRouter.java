@@ -95,6 +95,15 @@ public class ServerRouter implements Router {
                 }
                 break;
 
+            case REMOVEPOINTER:
+                Logger.debug(DebugType.FILEPOINTER, "Removed pointer (waspointer=" + configuration.getPeerState().isPointerFile(message.getFileKey()) + ") for file " + message.getFileKey());
+                configuration.getPeerState().removePointerFile(message.getFileKey());
+                break;
+
+            case ADDPOINTER:
+                Logger.debug(DebugType.FILEPOINTER, "Added pointer (waspointer=" + configuration.getPeerState().isPointerFile(message.getFileKey()) + ") for file " + message.getFileKey());
+                configuration.getPeerState().addPointerFile(message.getFileKey());
+                break;
 
             default:
                 Logger.log("Received " + message.getMessageType());

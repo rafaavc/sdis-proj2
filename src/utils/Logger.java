@@ -17,7 +17,8 @@ public class Logger {
         FILEBUCKET,
         FILETRANSFER,
         RESTORE,
-        RECLAIM
+        RECLAIM,
+        FILEPOINTER
     }
 
     private static final List<DebugType> active = new ArrayList<>();
@@ -31,6 +32,7 @@ public class Logger {
         setActive(DebugType.FILETRANSFER);
         setActive(DebugType.RESTORE);
 //        setActive(DebugType.RECLAIM);
+        setActive(DebugType.FILEPOINTER);
     }
 
     public static void setActive(DebugType type) {

@@ -286,22 +286,20 @@ public abstract class SSLPeer {
 
     protected static ByteBuffer increaseBufferSize(ByteBuffer buffer, int capacity) {
         if (capacity > buffer.capacity()) {
-            buffer = ByteBuffer.allocate(capacity);
-        } else {
-            buffer = ByteBuffer.allocate(buffer.capacity() * 2);
+            return ByteBuffer.allocate(capacity);
         }
-        return buffer;
+        return ByteBuffer.allocate(buffer.capacity() * 2);
     }
 
     protected static ByteBuffer processBufferUnderflow(SSLEngine engine, ByteBuffer buffer) {
-        if (engine.getSession().getPacketBufferSize() < buffer.limit()) {
+        if (engine.getSession().getPacketBufferSize() < buffer.limit())
             return buffer;
-        } else {
-            ByteBuffer replaceBuffer = increaseBufferSize(buffer, engine.getSession().getPacketBufferSize());
-            buffer.flip();
-            replaceBuffer.put(buffer);
-            return replaceBuffer;
-        }
+
+        ByteBuffer replaceBuffer = increaseBufferSize(buffer, engine.getSession().getPacketBufferSize());
+        buffer.flip();
+        replaceBuffer.put(buffer);
+
+        return replaceBuffer;
     }
 
     protected void closeConnection(SocketChannel socketChannel, SSLEngine engine) throws IOException {

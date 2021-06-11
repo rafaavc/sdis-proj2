@@ -47,7 +47,7 @@ public class Backup implements Action {
             ChordNode destinationNode = configuration.getChord().lookup(file.getFileKey()).get();
 
             Message message = MessageFactory.getPutfileMessage(configuration.getPeerId(), file.getFileKey(),
-                    (int) Math.ceil(file.getData().length / 15000.), file.getData().length);
+                    (int) Math.ceil(file.getData().length / 15000.), desiredReplicationDegree, file.getData().length);
             Logger.debug(Logger.DebugType.BACKUP, "Sending " + message);
 
 

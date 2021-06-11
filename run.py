@@ -251,7 +251,9 @@ while running:
 
 
             print()
-            subprocess.run([ "./interface.sh", *text.split(" ")])
+            newpid = os.fork()
+            if newpid == 0:
+                os.execv("./interface.sh", [ "./interface.sh", *text.split(" ") ])
             continue
         
 

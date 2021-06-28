@@ -1,4 +1,4 @@
-# SDIS Project
+# Distributed Backup Service for the Web
 
 SDIS Project for group T6G21.
 
